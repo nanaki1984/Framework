@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include "Core/RefCounted.h"
 
 template <class T> class WeakPtr;
@@ -13,6 +14,8 @@ protected:
 
     WeakPtr<Trackable> *head;
     WeakPtr<Trackable> *tail;
+
+    std::recursive_mutex weakRefLock;
 public:
     Trackable();
     virtual ~Trackable();

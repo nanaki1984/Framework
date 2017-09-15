@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include "Core/ClassInfo.h"
 #include "Core/Collections/List_type.h"
 
@@ -15,7 +16,8 @@ public:
 private:
 	ListNode<RefCounted> node;
 	
-	uint32_t refCount;
+	//uint32_t refCount;
+    std::atomic_uint32_t refCount;
 public:
 	Allocator *allocator;
 
@@ -25,6 +27,8 @@ public:
     void Release();
 
     uint32_t GetRefCount() const;
+
+    bool IsAlive() const;
 protected:
     virtual ~RefCounted();
 

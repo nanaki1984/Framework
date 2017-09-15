@@ -23,20 +23,17 @@ RefCounted::~RefCounted()
 void
 RefCounted::AddRef()
 {
-    if (0 == refCount)
+    if (0 == refCount++)
         GC.garbage.Remove(this);
-
-    ++refCount;
 }
 
 void
 RefCounted::Release()
 {
-    assert(refCount > 0);
+    int cnt = refCount--;
+    assert(cnt > 0);
 
-    --refCount;
-
-    if (0 == refCount)
+    if (1 == cnt)
         GC.garbage.PushBack(this);
 }
 
@@ -44,6 +41,12 @@ uint32_t
 RefCounted::GetRefCount() const
 {
     return refCount;
+}
+
+bool
+RefCounted::IsAlive() const
+{
+    return refCount > 0;
 }
 
 GarbageCollector::GarbageCollector()
