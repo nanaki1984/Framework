@@ -63,10 +63,10 @@ RenderQueue::RenderFrame()
 {
 	if (inBeginFrameCmds || frames.IsEmpty())
         return;
-#if !defined EMSCRIPTEN
-    float t0 = TimeServer::Instance()->GetMilliseconds();
-#endif
-    Frame frame = frames.Front();
+
+	float t0 = TimeServer::Instance()->GetMilliseconds();
+
+	Frame frame = frames.Front();
     frames.PopFront();
 
     renderer->BeginFrame();
@@ -118,10 +118,9 @@ RenderQueue::RenderFrame()
     ImGui::Render();
 
     renderer->EndFrame();
-#if !defined EMSCRIPTEN
-    float t1 = TimeServer::Instance()->GetMilliseconds();
+
+	float t1 = TimeServer::Instance()->GetMilliseconds();
     Log::Instance()->Write(Log::Info, "Rendering time: %f (dc: %d)", (t1 - t0), renderer->GetDrawCallsCount());
-#endif
 }
 
 uint32_t

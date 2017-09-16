@@ -11,18 +11,36 @@ Trackable::Trackable()
   tail(nullptr)
 { }
 
-Trackable::~Trackable ( )
+Trackable::~Trackable()
+{ }
+
+void
+Trackable::InvalidateWeakReferences()
 {
-    this->InvalidateAllWeakRefs();
+	weakRefLock.lock();
+	WeakPtr<Trackable> *node = head;
+	WeakPtr<Trackable> *tmp;
+
+	while (node) {
+		tmp = node;
+		node = node->nextRef;
+
+		tmp->Invalidate();
+	}
+
+	head = tail = nullptr;
+	weakRefLock.unlock();
+
+	assert(0 == weakRefCount);
 }
 
 void
 Trackable::AddWeakRef(WeakPtr<Trackable> *ptr)
 {
-    std::lock_guard<std::recursive_mutex> guard(weakRefLock);
-
     int cnt = weakRefCount++;
-    if (nullptr == tail) {
+
+	weakRefLock.lock();
+	if (nullptr == tail) {
         assert(0 == cnt);
         head = tail = ptr;
 
@@ -36,17 +54,17 @@ Trackable::AddWeakRef(WeakPtr<Trackable> *ptr)
 
         tail = ptr;
     }
+	weakRefLock.unlock();
 }
 
 void
 Trackable::RemoveWeakRef(WeakPtr<Trackable> *ptr)
 {
-    std::lock_guard<std::recursive_mutex> guard(weakRefLock);
-
     int cnt = weakRefCount--;
     assert(cnt > 0);
 
-    if (head == ptr)
+	weakRefLock.lock();
+	if (head == ptr)
     {
         if (tail == ptr)
         {
@@ -72,29 +90,10 @@ Trackable::RemoveWeakRef(WeakPtr<Trackable> *ptr)
         ptr->prevRef->nextRef = ptr->nextRef;
         ptr->nextRef->prevRef = ptr->prevRef;
     }
+	weakRefLock.unlock();
 
     ptr->prevRef = nullptr;
     ptr->nextRef = nullptr;
-}
-
-void
-Trackable::InvalidateAllWeakRefs()
-{
-    std::lock_guard<std::recursive_mutex> guard(weakRefLock);
-
-    WeakPtr<Trackable> *node = head;
-    WeakPtr<Trackable> *tmp;
-
-    while (node) {
-        tmp  = node;
-        node = node->nextRef;
-
-        tmp->Invalidate();
-    }
-
-    head = tail = nullptr;
-
-    weakRefCount = 0;
 }
 
 } // namespace Framework

@@ -35,9 +35,6 @@ protected:
 	uint64_t machAbsTimeStart;
 	uint64_t machAbsTime;
 	uint64_t machAbsTimePaused;
-#elif defined EMSCRIPTEN
-	double timeStart;
-	double timePaused;
 #endif
 public:
     TimeServer();

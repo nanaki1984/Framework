@@ -2,9 +2,7 @@
 
 #include <cstdint>
 #include <cstdlib>
-#ifdef EMSCRIPTEN
-#   include <stdlib.h>
-#endif
+
 #include "Core/ClassInfo.h"
 #include "Core/Collections/List_type.h"
 

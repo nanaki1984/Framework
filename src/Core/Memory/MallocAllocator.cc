@@ -1,9 +1,5 @@
 #include "Core/Memory/MallocAllocator.h"
 
-#ifdef EMSCRIPTEN
-#   include <stdlib.h>
-#endif
-
 namespace Framework {
 
 struct Header {

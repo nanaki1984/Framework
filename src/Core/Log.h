@@ -1,10 +1,7 @@
 #pragma once
 
 #include <cstdarg>
-
-#ifndef EMSCRIPTEN
-#   include <fstream>
-#endif // EMSCRIPTEN
+#include <fstream>
 
 #include "Core/Singleton.h"
 
@@ -13,9 +10,7 @@ namespace Framework {
 class Log : public Singleton<Log> {
     DeclareClassInfo;
 protected:
-#ifndef EMSCRIPTEN
     std::ofstream appLog;
-#endif // EMSCRIPTEN
 public:
     enum MsgFlags {
         Info    = 0x0,   // 000

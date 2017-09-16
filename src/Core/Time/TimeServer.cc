@@ -2,10 +2,6 @@
 #include "Core/Collections/Array.h"
 #include "Core/Memory/MallocAllocator.h"
 
-#if defined EMSCRIPTEN
-#   include "GL/glfw.h"
-#endif
-
 namespace Framework {
 
 DefineClassInfo(Framework::TimeServer, Framework::RefCounted);
@@ -24,8 +20,6 @@ TimeServer::TimeServer()
 #elif defined __APPLE__
 	machAbsTimeStart = mach_absolute_time();
 	mach_timebase_info(&timebaseInfo);
-#elif defined EMSCRIPTEN
-    timeStart = glfwGetTime();
 #endif
 }
 
@@ -61,8 +55,6 @@ TimeServer::Tick()
     uint64_t nanosec = ((machAbsTime - machAbsTimeStart) * timebaseInfo.numer) / timebaseInfo.denom;
 
     realTime = nanosec * 0.000000001f;
-#elif defined EMSCRIPTEN
-    realTime = (glfwGetTime() - timeStart);
 #endif
 
     totalTime = paused ? oldTotalTime : (realTime - totalPauseTime);
@@ -85,8 +77,6 @@ TimeServer::Pause()
     QueryPerformanceCounter((LARGE_INTEGER*)&timePaused);
 #elif defined __APPLE__
 	machAbsTimePaused = mach_absolute_time();
-#elif defined EMSCRIPTEN
-    timePaused = glfwGetTime();
 #endif
 
     auto it = sources.Begin(), end = sources.End();
@@ -112,8 +102,6 @@ TimeServer::Resume()
 	uint64_t nanosec = ((endTime - machAbsTimePaused) * timebaseInfo.numer) / timebaseInfo.denom;
 	
 	totalPauseTime += (nanosec * 0.000000001f);
-#elif defined EMSCRIPTEN
-    totalPauseTime += (glfwGetTime() - timePaused);
 #endif
 
     auto it = sources.Begin(), end = sources.End();
@@ -132,8 +120,6 @@ TimeServer::GetMilliseconds() const
     uint64_t absTime = mach_absolute_time();
     uint64_t nanosec = ((absTime - machAbsTimeStart) * timebaseInfo.numer) / timebaseInfo.denom;
     return nanosec * 0.000001f;
-#elif defined EMSCRIPTEN
-    return (glfwGetTime() - timeStart) * 1000.0f;
 #endif
 }
 

@@ -1,15 +1,13 @@
-if(NOT EMSCRIPTEN)
-	if(MACOS)
-		find_library(COCOA NAMES Cocoa)
-		find_library(OGL NAMES OpenGL)
-		find_library(IOKIT NAMES IOKit)
+if(MACOS)
+	find_library(COCOA NAMES Cocoa)
+	find_library(OGL NAMES OpenGL)
+	find_library(IOKIT NAMES IOKit)
 
-		set(SYS_LIBS ${SYS_LIBS} ${COCOA} ${OGL} ${IOKIT} PARENT_SCOPE)
-	elseif(WINDOWS)
-		find_package(OpenGL)
+	set(SYS_LIBS ${SYS_LIBS} ${COCOA} ${OGL} ${IOKIT} PARENT_SCOPE)
+elseif(WINDOWS)
+	find_package(OpenGL)
 
-		set(SYS_LIBS ${SYS_LIBS} ${OPENGL_LIBRARY} PARENT_SCOPE)
-	endif()
+	set(SYS_LIBS ${SYS_LIBS} ${OPENGL_LIBRARY} PARENT_SCOPE)
 endif()
 
 set(SUB_DIRS Components Core Game Managers Math Render)

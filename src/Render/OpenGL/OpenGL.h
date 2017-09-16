@@ -1,12 +1,6 @@
 #pragma once
 
-// Platform dependant GL includes
-#ifdef EMSCRIPTEN
-#   include "GL/glew.h"
-#else
-#   include "GL/glew.h"
-#endif
-
+#include "GL/glew.h"
 #include "Core/Debug.h"
 #include "Render/Image/ImageFormat.h"
 #include "Render/RenderModeState.h"

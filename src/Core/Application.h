@@ -35,10 +35,6 @@ protected:
 
     void Tick();
 
-#ifdef EMSCRIPTEN
-    static void emscripten_loop();
-#endif
-
 //#if defined(EDITOR)
     String serializeFilepath;
     BitStream serializeStream;

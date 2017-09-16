@@ -16,9 +16,7 @@ void ShowAssert2Message(const char *exp, const char *msg, const char *filename, 
 #endif // assert
 
 #ifdef _DEBUG
-#   if defined(EMSCRIPTEN)
-#       define _BREAK (void)0;
-#   elif defined(_MSC_VER)
+#   if defined(_MSC_VER)
 #       include <intrin.h>
 #       define _BREAK __debugbreak();
 #   else

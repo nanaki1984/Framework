@@ -89,13 +89,7 @@ WeakPtr<T>::WeakPtr(WeakPtr<T> &&p)
 template <class T>
 WeakPtr<T>::~WeakPtr()
 {
-    if (nullptr != ptr) {
-        WeakPtr<Framework::Trackable> *ref = reinterpret_cast<WeakPtr<Framework::Trackable>*>(this);
-
-        static_cast<Framework::Trackable*>(ptr)->RemoveWeakRef(ref);
-    }
-
-    ptr = nullptr;
+	Invalidate();
 }
 
 template <class T>
@@ -109,8 +103,13 @@ WeakPtr<T>::Set(T *p)
 
     ptr = p;
 
-    if (nullptr != ptr)
-        static_cast<Framework::Trackable*>(ptr)->AddWeakRef(ref);
+	if (nullptr != ptr)
+	{
+		if (ptr->IsAlive())
+			static_cast<Framework::Trackable*>(ptr)->AddWeakRef(ref);
+		else
+			ptr = nullptr;
+	}
 }
 
 template <class T>
@@ -130,7 +129,7 @@ template <class T>
 inline bool
 WeakPtr<T>::IsValid() const
 {
-    return (nullptr != ptr);
+	return (ptr != nullptr && ptr->IsAlive());
 }
 
 template <class T>
@@ -188,7 +187,7 @@ template <class T>
 inline T*
 WeakPtr<T>::operator -> () const
 {
-    assert(ptr);
+    assert(IsValid());
     return ptr;
 }
 
@@ -196,7 +195,7 @@ template <class T>
 inline T&
 WeakPtr<T>::operator * () const
 {
-    assert(ptr);
+    assert(IsValid());
     return *ptr;
 }
 
@@ -205,7 +204,7 @@ template <class U>
 inline U*
 WeakPtr<T>::Cast() const
 {
-    assert(ptr);
+    assert(IsValid());
     assert(ptr->template IsA<U>());
     return static_cast<U*>(ptr);
 }

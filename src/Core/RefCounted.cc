@@ -1,4 +1,5 @@
 #include "Core/RefCounted.h"
+#include "Core/Trackable.h"
 #include "Core/Memory/Allocator.h"
 #include "Core/Collections/List.h"
 
@@ -33,8 +34,12 @@ RefCounted::Release()
     int cnt = refCount--;
     assert(cnt > 0);
 
-    if (1 == cnt)
-        GC.garbage.PushBack(this);
+	if (1 == cnt)
+	{
+		this->InvalidateWeakReferences();
+
+		GC.garbage.PushBack(this);
+	}
 }
 
 uint32_t
@@ -49,6 +54,10 @@ RefCounted::IsAlive() const
     return refCount > 0;
 }
 
+void
+RefCounted::InvalidateWeakReferences()
+{ }
+
 GarbageCollector::GarbageCollector()
 { }
 
@@ -59,15 +68,21 @@ void
 GarbageCollector::Collect()
 {
     RefCounted *node = garbage.Begin();
-    while (node != nullptr) {
-        garbage.PopFront();
+    while (node != nullptr)
+	{
+		if (!node->IsA<Trackable>() || 0 == static_cast<Trackable*>(node)->GetWeakRefCount())
+		{
+			auto tmp = node;
+			node = garbage.GetNext(node);
+			garbage.Remove(tmp);
 
-        node->~RefCounted();
-        assert(node->allocator != nullptr);
-        node->allocator->Free(node);
-
-        node = garbage.Begin();
-    }
+			tmp->~RefCounted();
+			assert(tmp->allocator != nullptr);
+			tmp->allocator->Free(tmp);
+		}
+		else
+			node = garbage.GetNext(node);
+	}
 }
 
 }; // namespace Framework

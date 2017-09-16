@@ -221,10 +221,9 @@ RenderersManager::OnLateUpdate()
 void
 RenderersManager::OnRender()
 {
-#if !defined EMSCRIPTEN
     float t0 = TimeServer::Instance()->GetMilliseconds();
-#endif
-    this->FreeNodesRecursively(octreeRoot);
+
+	this->FreeNodesRecursively(octreeRoot);
 
     Math::Bounds octreeBounds;
 	octreeBounds.Reset();
@@ -261,10 +260,9 @@ RenderersManager::OnRender()
 		node->renderers.PushBack(rndrIt);
         ++c;
 	}
-#if !defined EMSCRIPTEN
-    float t1 = TimeServer::Instance()->GetMilliseconds();
+
+	float t1 = TimeServer::Instance()->GetMilliseconds();
     Log::Instance()->Write(Log::Info, "Culling time: %f (renderers: %d)", (t1 - t0), c);
-#endif
 }
 
 void

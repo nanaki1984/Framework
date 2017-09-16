@@ -11,9 +11,7 @@
 // If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
 // https://github.com/ocornut/imgui
 
-#ifndef EMSCRIPTEN
-#   include "GL/glew.h"
-#endif
+#include "GL/glew.h"
 #include "GL/glfw.h"
 
 #include <imgui.h>

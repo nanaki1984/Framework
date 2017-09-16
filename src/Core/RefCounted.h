@@ -16,7 +16,6 @@ public:
 private:
 	ListNode<RefCounted> node;
 	
-	//uint32_t refCount;
     std::atomic_uint32_t refCount;
 public:
 	Allocator *allocator;
@@ -31,6 +30,8 @@ public:
     bool IsAlive() const;
 protected:
     virtual ~RefCounted();
+
+	virtual void InvalidateWeakReferences();
 
 	friend class GarbageCollector;
 };

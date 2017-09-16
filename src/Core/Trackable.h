@@ -10,19 +10,20 @@ namespace Framework {
 class Trackable : public RefCounted {
     DeclareClassInfo;
 protected:
-    uint32_t weakRefCount;
+    std::atomic_uint32_t weakRefCount;
 
     WeakPtr<Trackable> *head;
     WeakPtr<Trackable> *tail;
 
     std::recursive_mutex weakRefLock;
+
+	virtual void InvalidateWeakReferences() final override;
 public:
     Trackable();
     virtual ~Trackable();
 
     void AddWeakRef(WeakPtr<Trackable> *ptr);
     void RemoveWeakRef(WeakPtr<Trackable> *ptr);
-    void InvalidateAllWeakRefs();
 
 	uint32_t GetWeakRefCount() const;
 };

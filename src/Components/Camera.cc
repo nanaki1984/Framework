@@ -82,10 +82,9 @@ Camera::Deserialize(SerializationServer *server, const BitStream &stream)
 void
 Camera::Render()
 {
-#if !defined EMSCRIPTEN
     float t0 = TimeServer::Instance()->GetMilliseconds();
-#endif
-    Math::Matrix view     = entity->GetTransform()->GetWorldToLocal(),
+
+	Math::Matrix view     = entity->GetTransform()->GetWorldToLocal(),
                  viewProj = view * this->GetProjection();
 
     auto rndrMng = GetManager<RenderersManager>();
@@ -141,10 +140,9 @@ Camera::Render()
             }
         }
     }
-#if !defined EMSCRIPTEN
-    float t1 = TimeServer::Instance()->GetMilliseconds();
+
+	float t1 = TimeServer::Instance()->GetMilliseconds();
     Log::Instance()->Write(Log::Info, "Render camera time: %f (renderers: %d)", (t1 - t0), count);
-#endif
 }
 
 const Rect&

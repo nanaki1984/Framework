@@ -1,6 +1,4 @@
-#ifndef EMSCRIPTEN
-#   include "GL/glew.h"
-#endif
+#include "GL/glew.h"
 #include "GL/glfw.h"
 
 #include "Core/Application.h"
@@ -11,10 +9,6 @@
 
 #include "Managers/ComponentsManager.h"
 #include "Managers/GetManager.h"
-
-#ifdef EMSCRIPTEN
-#   include <emscripten.h>
-#endif
 
 #include <imgui.h>
 #include "imgui_impl_glfw.h"
@@ -72,17 +66,18 @@ Application::Initialize(int width, int height)
     //glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 
-    if (!glfwOpenWindow(width, height, 0, 0, 0, 0, 16, 0, GLFW_WINDOW))
+	if (!glfwOpenWindow(width, height, 0, 0, 0, 0, 16, 0, GLFW_WINDOW))
     {
         glfwTerminate();
         return false;
     }
-#ifndef EMSCRIPTEN
-    glewInit();
-#endif
-    glfwSetWindowTitle(name);
+
+	glewInit();
+
+	glfwSetWindowTitle(name);
     glfwEnable(GLFW_KEY_REPEAT);
-    glfwSwapInterval(0);// 1);
+	glfwDisable(GLFW_AUTO_POLL_EVENTS);
+	glfwSwapInterval(0);// 1);
 
     ImGui_ImplGlfwGL2_Init(true);
 
@@ -98,38 +93,33 @@ Application::Run()
 
     timeServer->Resume();
 
-#ifndef EMSCRIPTEN
     while (active)
     {
-        glfwPollEvents();
+		glfwPollEvents();
 
-        if (!glfwGetWindowParam(GLFW_OPENED))
-        {
-            this->RequestQuit();
-            break;
-        }
+		if (!glfwGetWindowParam(GLFW_OPENED))
+		{
+			this->RequestQuit();
+			break;
+		}
+		
+		this->Tick();
 
-        ImGui_ImplGlfwGL2_NewFrame();
+		// render
+		renderQueue->RenderFrame();
 
-        this->Tick();
-
-        // render
-	    renderQueue->RenderFrame();
-
-        glfwSwapBuffers();
-    }
-#else
-    emscripten_set_main_loop([] { Application::Instance()->Tick(); }, 0, 1);
-#endif
+		glfwSwapBuffers();
+	}
 }
 
 void
 Application::Tick()
 {
-#if !defined EMSCRIPTEN
+	ImGui_ImplGlfwGL2_NewFrame();
+
     float t0 = TimeServer::Instance()->GetMilliseconds();
-#endif
-    timeServer->Tick();
+
+	timeServer->Tick();
 
     // physics
 
@@ -149,10 +139,8 @@ Application::Tick()
 
     RefCounted::GC.Collect();
 
-#if !defined EMSCRIPTEN
     float t1 = TimeServer::Instance()->GetMilliseconds();
     Log::Instance()->Write(Log::Info, "frame time: %f", (t1 - t0));
-#endif
 }
 
 const SmartPtr<BaseManager>&

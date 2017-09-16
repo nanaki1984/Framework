@@ -5,10 +5,6 @@
 #include "Core/Memory/MallocAllocator.h"
 #include "Core/Log.h"
 
-#ifdef EMSCRIPTEN
-#   include <emscripten.h>
-#endif
-
 namespace Framework {
 
 DefineClassInfo(Framework::FileServer, Framework::RefCounted);
@@ -16,11 +12,7 @@ DefineClassInfo(Framework::FileServer, Framework::RefCounted);
 FileServer::FileServer()
 : aliases(Memory::GetAllocator<MallocAllocator>())
 {
-#if defined EMSCRIPTEN
-    this->AddAlias("home", "."); // ToDo
-#else
     this->AddAlias("home", "../.."); // ToDo
-#endif
     this->AddAlias("shaders_include", "home:"); // ToDo
 }
 

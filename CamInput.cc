@@ -56,16 +56,6 @@ CamInput::Update()
         delta -= up * dt;
     if (GLFW_PRESS == glfwGetKey('Q'))
         delta += up * dt;
-#if defined EMSCRIPTEN
-    if (GLFW_PRESS == glfwGetKey('J'))
-        forward -= right * dt;
-    if (GLFW_PRESS == glfwGetKey('L'))
-        forward += right * dt;
-    if (GLFW_PRESS == glfwGetKey('I'))
-        forward += up * dt;
-    if (GLFW_PRESS == glfwGetKey('K'))
-        forward -= up * dt;
-#else
     if (GLFW_PRESS == glfwGetKey(GLFW_KEY_LEFT))
         forward -= right * dt;
     if (GLFW_PRESS == glfwGetKey(GLFW_KEY_RIGHT))
@@ -83,8 +73,8 @@ CamInput::Update()
             app->SerializeEntity((*it)->GetEntity());
         app->EndSerialize();
     }
-#endif
-    QuaternionLookAt(forward, up, q);
+
+	QuaternionLookAt(forward, up, q);
 
     transform->SetWorldPosition(p + delta * 2.0f);
     transform->SetWorldRotation(q);
