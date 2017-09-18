@@ -12,6 +12,8 @@
 #include "Managers/BaseManager.h"
 #include "Game/SerializationServer.h"
 
+struct GLFWwindow;
+
 namespace Framework {
 
 struct Application {
@@ -32,6 +34,9 @@ protected:
     SmartPtr<RenderQueue> renderQueue;
 
     Array<SmartPtr<BaseManager>> managers;
+
+	GLFWwindow *gameWindow;
+	GLFWwindow *renderThreadWindow;
 
     void Tick();
 
@@ -55,6 +60,9 @@ public:
 
 	int GetScreenWidth() const;
 	int GetScreenHeight() const;
+
+	GLFWwindow* GetGameWindow() const;
+	GLFWwindow* GetRenderThreadWindow() const;
 
     void DeserializeEntities(const char *filename);
 
@@ -83,6 +91,18 @@ inline int
 Application::GetScreenHeight() const
 {
 	return screenHeight;
+}
+
+inline GLFWwindow*
+Application::GetGameWindow() const
+{
+	return gameWindow;
+}
+
+inline GLFWwindow*
+Application::GetRenderThreadWindow() const
+{
+	return renderThreadWindow;
 }
 
 } // namespace Framework

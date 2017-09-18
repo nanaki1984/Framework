@@ -9,25 +9,11 @@ if(LINUX OR MACOS OR WINDOWS)
 endif()
 
 if(WIN_BACKEND STREQUAL GLFW)
-	include_directories("glfw-2.7.7/include")
-	include_directories("glfw-2.7.7/lib")
+	include_directories("glfw-3.2.1/include")
 
-	FILE(GLOB GLFW_SRC glfw-2.7.7/lib/*.c)
+	add_subdirectory(glfw-3.2.1)
 
-	if(LINUX)
-		include_directories("glfw-2.7.7/lib/x11")
-		FILE(GLOB GLFW_PLATFORM_SRC glfw-2.7.7/lib/x11/*.c)
-	elseif(MACOS)
-		include_directories("glfw-2.7.7/lib/cocoa")
-		FILE(GLOB GLFW_PLATFORM_SRC glfw-2.7.7/lib/cocoa/*.m)
-	elseif(WINDOWS)
-		include_directories("glfw-2.7.7/lib/win32")
-		FILE(GLOB GLFW_PLATFORM_SRC glfw-2.7.7/lib/win32/*.c)
-	endif()
-
-	add_library(GLFW STATIC ${GLFW_SRC} ${GLFW_PLATFORM_SRC})
-
-	set(SYS_LIBS ${SYS_LIBS} GLFW)
+	set(SYS_LIBS ${SYS_LIBS} glfw ${GLFW_LIBRARIES})
 endif()
 
 include_directories("imgui")

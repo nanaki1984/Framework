@@ -1,5 +1,9 @@
 #pragma once
 
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
 #include "Core/Singleton.h"
 #include "Render/RenderObjects.h"
 #include "Render/Renderer.h"
@@ -23,9 +27,16 @@ protected:
     SimplePool<RenderTarget*> renderTargets;
 
     Array<RHI::KeyCode> commands;
-    Queue<Frame> frames;
+	Array<RHI::KeyCode> commandsCopy;
+
+	std::mutex m, paramsLock;
+	std::condition_variable cv;
+	std::thread renderThread;
+	bool newFrame, frameCompleted;
 
     bool inBeginFrameCmds;
+
+	void RenderFrame();
 public:
     RenderQueue();
     virtual ~RenderQueue();
@@ -37,8 +48,6 @@ public:
     void BeginFrameCommands();
     void SendCommand(RHI::KeyCode command);
     void EndFrameCommands();
-
-    void RenderFrame();
 
     uint32_t RegisterRenderTarget(RenderTarget *rt);
     void UnregisterRenderTarget(uint32_t id);

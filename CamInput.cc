@@ -4,7 +4,7 @@
 #include "Game/ComponentsList.h"
 #include "Math/Math.h"
 #include "Core/Log.h"
-#include "GL/glfw.h"
+#include "GLFW/glfw3.h"
 #include "Managers/TransformsManager.h"
 #include "imgui.h"
 
@@ -43,28 +43,30 @@ CamInput::Update()
 
     float dt = TimeServer::Instance()->GetDeltaTime();
 
-    Vector3 delta = Vector3::Zero;
-    if (GLFW_PRESS == glfwGetKey('W'))
+	GLFWwindow *window = Application::Instance()->GetRenderThreadWindow();
+
+	Vector3 delta = Vector3::Zero;
+    if (GLFW_PRESS == glfwGetKey(window, 'W'))
         delta += forward * dt;
-    if (GLFW_PRESS == glfwGetKey('S'))
+    if (GLFW_PRESS == glfwGetKey(window, 'S'))
         delta -= forward * dt;
-    if (GLFW_PRESS == glfwGetKey('A'))
+    if (GLFW_PRESS == glfwGetKey(window, 'A'))
         delta -= right * dt;
-    if (GLFW_PRESS == glfwGetKey('D'))
+    if (GLFW_PRESS == glfwGetKey(window, 'D'))
         delta += right * dt;
-    if (GLFW_PRESS == glfwGetKey('E'))
+    if (GLFW_PRESS == glfwGetKey(window, 'E'))
         delta -= up * dt;
-    if (GLFW_PRESS == glfwGetKey('Q'))
+    if (GLFW_PRESS == glfwGetKey(window, 'Q'))
         delta += up * dt;
-    if (GLFW_PRESS == glfwGetKey(GLFW_KEY_LEFT))
+    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_LEFT))
         forward -= right * dt;
-    if (GLFW_PRESS == glfwGetKey(GLFW_KEY_RIGHT))
+    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_RIGHT))
         forward += right * dt;
-    if (GLFW_PRESS == glfwGetKey(GLFW_KEY_UP))
+    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_UP))
         forward += up * dt;
-    if (GLFW_PRESS == glfwGetKey(GLFW_KEY_DOWN))
+    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_DOWN))
         forward -= up * dt;
-    if (GLFW_PRESS == glfwGetKey('R'))
+    if (GLFW_PRESS == glfwGetKey(window, 'R'))
     {
         auto app = Application::Instance();
         auto trMng = GetManager<TransformsManager>();
@@ -81,7 +83,7 @@ CamInput::Update()
 
     // 1. Show a simple window
     // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
-    {
+    /*{
         static ImVec4 clear_color = ImColor(114, 144, 154);
         static float f = 0.0f;
         static bool show_window = true;
@@ -97,7 +99,7 @@ CamInput::Update()
 
         static bool show_metrics = true;
         ImGui::ShowMetricsWindow(&show_metrics);
-    }
+    }*/
 
     Log::Instance()->Write(Log::Info, "fps: %f", 1.0f / dt);
 }

@@ -24,7 +24,7 @@ Camera::Camera()
   projectionOverride(false),
   projectionDirty(false),
   clearFlags(RHI::BaseRenderer::ClearAll),
-  clearColor(Color::Black),
+  clearColor(Color::Yellow),
   depth(128)
 {
 	Math::MatrixProjection(fieldOfView * Math::Deg2Rad, aspect, nearClipPlane, farClipPlane, projection);

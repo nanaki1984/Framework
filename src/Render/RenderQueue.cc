@@ -6,6 +6,9 @@
 #include "Core/Log.h"
 #include "imgui.h"
 
+#include "Core/Application.h"
+#include "GLFW/glfw3.h"
+
 namespace Framework {
 
 DefineClassInfo(Framework::RenderQueue, Framework::RefCounted);
@@ -14,7 +17,10 @@ RenderQueue::RenderQueue()
 : paramsBlocks(Memory::GetAllocator<MallocAllocator>()),
   renderTargets(Memory::GetAllocator<MallocAllocator>()),
   commands(Memory::GetAllocator<MallocAllocator>()),
-  frames(Memory::GetAllocator<MallocAllocator>()),
+  commandsCopy(Memory::GetAllocator<MallocAllocator>()),
+  renderThread(&RenderQueue::RenderFrame, this),
+  newFrame(false),
+  frameCompleted(true),
   inBeginFrameCmds(false)
 {
     renderer = SmartPtr<RHI::Renderer>::MakeNew<MallocAllocator>();
@@ -26,7 +32,9 @@ RenderQueue::~RenderQueue()
 uint32_t
 RenderQueue::GetMaterialParamsBlock(MaterialParamsBlock **outPointer)
 {
+	paramsLock.lock();
     uint32_t index = paramsBlocks.Allocate();
+	paramsLock.unlock();
     *outPointer = paramsBlocks.Begin() + index;
     (*outPointer)->Clear();
     return index;
@@ -37,48 +45,68 @@ RenderQueue::BeginFrameCommands()
 {
 	assert(!inBeginFrameCmds);
     inBeginFrameCmds = true;
-
-    frames.PushBack(Frame());
-    frames.Back().startIndex = commands.Count();
 }
 
 void
 RenderQueue::SendCommand(RHI::KeyCode command)
 {
 	assert(inBeginFrameCmds);
-    commands.PushBack(command);
+	commandsCopy.PushBack(command);
 }
 
 void
 RenderQueue::EndFrameCommands()
 {
-    frames.Back().endIndex = commands.Count();
-
 	assert(inBeginFrameCmds);
 	inBeginFrameCmds = false;
+
+	{
+		std::unique_lock<std::mutex> lk(m);
+		cv.wait(lk, [this] { return frameCompleted; });
+	}
+	RefCounted::GC.Collect();
+	
+	commands.Clear();
+	commands.InsertRange(0, commandsCopy.Begin(), commandsCopy.Count());
+	commandsCopy.Clear(); // ToDo: swap
+	
+	{
+		std::lock_guard<std::mutex> lk(m);
+		newFrame = true;
+	}
+	cv.notify_one();
+
+	//commands.Clear();
+	//commands.InsertRange(0, commandsCopy.Begin(), commandsCopy.Count());
+	//commandsCopy.Clear();
+	//this->RenderFrame();
+	//RefCounted::GC.Collect();
 }
 
 void
 RenderQueue::RenderFrame()
 {
-	if (inBeginFrameCmds || frames.IsEmpty())
-        return;
+	GLFWwindow *win = Application::Instance()->GetRenderThreadWindow();
+	glfwMakeContextCurrent(win);
+	//glewInit();
+
+	for (;;) {
+	std::unique_lock<std::mutex> lk(m);
+	cv.wait(lk, [this] { return newFrame; });
+	newFrame = frameCompleted = false;
 
 	float t0 = TimeServer::Instance()->GetMilliseconds();
 
-	Frame frame = frames.Front();
-    frames.PopFront();
-
     renderer->BeginFrame();
 
-    uint32_t cmdsCount = frame.endIndex - frame.startIndex;
+    uint32_t cmdsCount = commands.Count();
     if (cmdsCount > 0)
     {
-        Array<RHI::KeyCode>::Sort(commands, frame.startIndex, cmdsCount, [](const RHI::KeyCode &a, const RHI::KeyCode &b) {
+        Array<RHI::KeyCode>::Sort(commands, 0, cmdsCount, [](const RHI::KeyCode &a, const RHI::KeyCode &b) {
             return memcmp(a.bytes, b.bytes, 14) < 0;//sizeof(KeyCode)
         });
 
-        for (uint32_t i = frame.startIndex; i < frame.endIndex; ++i) {
+        for (uint32_t i = 0; i < cmdsCount; ++i) {
             RHI::Key key = commands[i];
             switch (key.GetCommand()) {
                 case RHI::Key::kCommandSetRenderTarget:
@@ -97,30 +125,49 @@ RenderQueue::RenderFrame()
                 {
                     int x, y, z;
                     key.GetNumWorkGroups(x, y, z);
-                    renderer->Dispatch(key.GetComputeShaderId(), x, y, z, paramsBlocks.Get(key.GetDispatchParamsBlockId()));
-                    paramsBlocks.Free(key.GetDispatchParamsBlockId());
-                    break;
+					paramsLock.lock();
+					const MaterialParamsBlock &params = paramsBlocks.Get(key.GetDispatchParamsBlockId());
+					paramsLock.unlock();
+					renderer->Dispatch(key.GetComputeShaderId(), x, y, z, params);
+					paramsLock.lock();
+					paramsBlocks.Free(key.GetDispatchParamsBlockId());
+					paramsLock.unlock();
+					break;
                 }
                 case RHI::Key::kCommandDrawCall:
-                    if (renderer->SetMaterialPass(key.GetMaterialId(), key.GetMaterialPass()))
-                        renderer->DrawMesh(key.GetMeshId(), key.GetSubMeshIndex(), paramsBlocks.Get(key.GetParamsBlockId()));
-                    paramsBlocks.Free(key.GetParamsBlockId());
+					if (renderer->SetMaterialPass(key.GetMaterialId(), key.GetMaterialPass()))
+					{
+						paramsLock.lock();
+						const MaterialParamsBlock &params = paramsBlocks.Get(key.GetParamsBlockId());
+						paramsLock.unlock();
+						renderer->DrawMesh(key.GetMeshId(), key.GetSubMeshIndex(), params);
+					}
+					paramsLock.lock();
+					paramsBlocks.Free(key.GetParamsBlockId());
+					paramsLock.unlock();
                     break;
                 default:
                     assert(false);
                     break;
             }
         }
-
-        commands.RemoveRange(frame.startIndex, cmdsCount);
     }
 
-    ImGui::Render();
+    //ImGui::Render();
 
     renderer->EndFrame();
 
+	glfwSwapBuffers(win);
+
 	float t1 = TimeServer::Instance()->GetMilliseconds();
     Log::Instance()->Write(Log::Info, "Rendering time: %f (dc: %d)", (t1 - t0), renderer->GetDrawCallsCount());
+
+	frameCompleted = true;
+	lk.unlock();
+	cv.notify_one();
+	} // for(;;)
+
+	glfwMakeContextCurrent(nullptr);
 }
 
 uint32_t

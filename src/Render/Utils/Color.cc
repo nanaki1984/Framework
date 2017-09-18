@@ -48,9 +48,9 @@ Color::Color(uint32_t _argb)
 
 Color::operator uint32_t()
 {
-    return ((uint32_t)ceilf(a * 255.0f) << 24) ||
-           ((uint32_t)ceilf(r * 255.0f) << 16) ||
-           ((uint32_t)ceilf(g * 255.0f) <<  8) ||
+    return ((uint32_t)ceilf(a * 255.0f) << 24) |
+           ((uint32_t)ceilf(r * 255.0f) << 16) |
+           ((uint32_t)ceilf(g * 255.0f) <<  8) |
            ((uint32_t)ceilf(b * 255.0f) <<  0);
 }
 

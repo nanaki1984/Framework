@@ -111,7 +111,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINKER_FLAGS}")
 set(SYS_LIBS "")
 set(LIBS "")
 
-include_directories("src" "ext/glfw-2.7.7/include" "ext/glew-2.1.0/include" "ext/imgui")
+include_directories("src" "ext/glfw-3.2.1/include" "ext/glew-2.1.0/include" "ext/imgui")
 
 add_subdirectory(ext)
 add_subdirectory(src)

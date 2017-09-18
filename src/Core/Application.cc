@@ -1,5 +1,5 @@
 #include "GL/glew.h"
-#include "GL/glfw.h"
+#include "GLFW/glfw3.h"
 
 #include "Core/Application.h"
 #include "Core/Time/TimeServer.h"
@@ -58,28 +58,37 @@ Application::Initialize(int width, int height)
     if (!glfwInit())
         return false;
 
-    glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE, 1);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 4);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 3);
-    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    //glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-    //glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
+	glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
 
-	if (!glfwOpenWindow(width, height, 0, 0, 0, 0, 16, 0, GLFW_WINDOW))
+	renderThreadWindow = glfwCreateWindow(width, height, name, nullptr, nullptr);
+	if (nullptr == renderThreadWindow)
     {
         glfwTerminate();
         return false;
     }
 
-	glewInit();
-
-	glfwSetWindowTitle(name);
-    glfwEnable(GLFW_KEY_REPEAT);
-	glfwDisable(GLFW_AUTO_POLL_EVENTS);
 	glfwSwapInterval(0);// 1);
 
-    ImGui_ImplGlfwGL2_Init(true);
+	glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+	gameWindow = glfwCreateWindow(width, height, name, nullptr, renderThreadWindow);
+	if (nullptr == gameWindow)
+	{
+		glfwTerminate();
+		return false;
+	}
+
+	glfwMakeContextCurrent(gameWindow);
+
+	glewInit();
+
+    //ImGui_ImplGlfwGL3_Init(gameWindow, true);
 
     renderQueue = SmartPtr<RenderQueue>::MakeNew<LinearAllocator>();
 
@@ -97,7 +106,7 @@ Application::Run()
     {
 		glfwPollEvents();
 
-		if (!glfwGetWindowParam(GLFW_OPENED))
+		if (glfwWindowShouldClose(renderThreadWindow))
 		{
 			this->RequestQuit();
 			break;
@@ -105,17 +114,14 @@ Application::Run()
 		
 		this->Tick();
 
-		// render
-		renderQueue->RenderFrame();
-
-		glfwSwapBuffers();
+		//glfwSwapBuffers(gameWindow);
 	}
 }
 
 void
 Application::Tick()
 {
-	ImGui_ImplGlfwGL2_NewFrame();
+	//ImGui_ImplGlfwGL3_NewFrame();
 
     float t0 = TimeServer::Instance()->GetMilliseconds();
 
@@ -136,8 +142,6 @@ Application::Tick()
 	for (it = managers.Begin(); it != end; ++it)
 		(*it)->OnRender();
 	renderQueue->EndFrameCommands();
-
-    RefCounted::GC.Collect();
 
     float t1 = TimeServer::Instance()->GetMilliseconds();
     Log::Instance()->Write(Log::Info, "frame time: %f", (t1 - t0));
@@ -227,7 +231,7 @@ Application::RequestQuit()
 
     ClassInfoUtils::Destroy();
 
-    ImGui_ImplGlfwGL2_Shutdown();
+    //ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
 
     active = false;
