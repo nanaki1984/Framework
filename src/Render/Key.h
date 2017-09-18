@@ -52,7 +52,7 @@ private:
             };
         };
 
-        struct { // DRAWCALL
+        struct { // kCommandDrawCall
             BaseShaderProgram::Translucency translucency;
 
             uint8_t sortingOrder;

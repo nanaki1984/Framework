@@ -16,11 +16,6 @@ namespace Framework {
 class RenderQueue : public Singleton<RenderQueue> {
     DeclareClassInfo;
 protected:
-    struct Frame {
-        uint32_t startIndex;
-        uint32_t endIndex;
-    };
-
     SmartPtr<RHI::Renderer> renderer;
 
     SimplePool<MaterialParamsBlock> paramsBlocks;
@@ -31,14 +26,15 @@ protected:
 
     SimplePool<RenderTarget*> renderTargets;
     
-    std::mutex m;
-	std::condition_variable cv;
-	std::thread renderThread;
-	bool newFrame, frameCompleted;
+    std::mutex              rtMutex;
+	std::condition_variable rtSignal;
+	std::thread             renderThread;
+
+    bool newFrame, frameCompleted, quitRequest;
 
     bool inBeginFrameCmds;
 
-	void RenderFrame();
+	void RenderFrames();
 public:
     RenderQueue();
     virtual ~RenderQueue();
