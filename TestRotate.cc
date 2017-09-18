@@ -56,12 +56,12 @@ TestRotate::Update()
 /*
     if (2 == GetInstanceID() && TimeServer::Instance()->GetTime() > 5.0f)
         entity->DestroyRecursively();*/
-
+/*
     if (TimeServer::Instance()->GetTime() >= deactivationTime)
     {
         entity->SetActive(false);
         entity->SendMessage("MyMessageTest");
-    }
+    }*/
 }
 
 void

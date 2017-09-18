@@ -65,7 +65,7 @@ RenderQueue::EndFrameCommands()
 		cv.wait(lk, [this] { return frameCompleted; });
 	}
 	RefCounted::GC.Collect();
-	
+
 	commands.Clear();
 	commands.InsertRange(0, commandsCopy.Begin(), commandsCopy.Count());
 	commandsCopy.Clear(); // ToDo: swap
@@ -88,15 +88,15 @@ RenderQueue::RenderFrame()
 {
 	GLFWwindow *win = Application::Instance()->GetRenderThreadWindow();
 	glfwMakeContextCurrent(win);
-	//glewInit();
+    glfwSwapInterval(0);// 1);
+    glewInit();
 
 	for (;;) {
 	std::unique_lock<std::mutex> lk(m);
 	cv.wait(lk, [this] { return newFrame; });
 	newFrame = frameCompleted = false;
 
-	float t0 = TimeServer::Instance()->GetMilliseconds();
-
+    //GLFWwindow *win = Application::Instance()->GetRenderThreadWindow();
     renderer->BeginFrame();
 
     uint32_t cmdsCount = commands.Count();
@@ -158,9 +158,6 @@ RenderQueue::RenderFrame()
     renderer->EndFrame();
 
 	glfwSwapBuffers(win);
-
-	float t1 = TimeServer::Instance()->GetMilliseconds();
-    Log::Instance()->Write(Log::Info, "Rendering time: %f (dc: %d)", (t1 - t0), renderer->GetDrawCallsCount());
 
 	frameCompleted = true;
 	lk.unlock();

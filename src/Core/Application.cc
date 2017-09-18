@@ -74,7 +74,8 @@ Application::Initialize(int width, int height)
         return false;
     }
 
-	glfwSwapInterval(0);// 1);
+    //glfwMakeContextCurrent(renderThreadWindow);
+    //glfwSwapInterval(0);// 1);
 
 	glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 	gameWindow = glfwCreateWindow(width, height, name, nullptr, renderThreadWindow);
@@ -98,7 +99,9 @@ Application::Initialize(int width, int height)
 void
 Application::Run()
 {
-	active = true;
+    glfwMakeContextCurrent(gameWindow);
+    
+    active = true;
 
     timeServer->Resume();
 
@@ -113,8 +116,6 @@ Application::Run()
 		}
 		
 		this->Tick();
-
-		//glfwSwapBuffers(gameWindow);
 	}
 }
 
