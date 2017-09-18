@@ -19,11 +19,43 @@
 #include <GLFW/glfw3native.h>
 #endif
 
+#include "Render/Resources/Mesh.h"
+#include "Render/Resources/Material.h"
+#include "Render/Resources/Shader.h"
+#include "Render/Resources/ResourceServer.h"
+
+using namespace Framework;
+
 // Data
 static GLFWwindow*  g_Window = NULL;
 static double       g_Time = 0.0f;
 static bool         g_MousePressed[3] = { false, false, false };
 static float        g_MouseWheel = 0.0f;
+
+struct UIMesh
+{
+	RHI::VertexBufferDesc vbDesc;
+	RHI::IndexBufferDesc  ibDesc;
+	WeakPtr<Mesh>         mesh;
+
+	UIMesh(int index, int nVertices, int nIndices, int nDrawCalls)
+	{
+		vbDesc.flags = RHI::HardwareBuffer::Dynamic;
+		vbDesc.nVertices = nVertices;
+
+		vbDesc.vertexDecl.AddVertexElement(RHI::VertexDecl::XYZ, RHI::VertexDecl::Float2);
+		vbDesc.vertexDecl.AddVertexElement(RHI::VertexDecl::TexCoord, RHI::VertexDecl::Float2);
+		vbDesc.vertexDecl.AddVertexElement(RHI::VertexDecl::Color0, RHI::VertexDecl::Float1);
+
+		ibDesc.flags = RHI::HardwareBuffer::Dynamic;
+		ibDesc.nIndices = nIndices;
+		ibDesc.indexSize = RHI::IndexWord;
+
+		mesh = ResourceServer::Instance()->NewResource<Mesh>("uiMesh", Resource::ReadOnly);
+	}
+};
+static Array<UIMesh> *uiMeshes;
+
 static GLuint       g_FontTexture = 0;
 static int          g_ShaderHandle = 0, g_VertHandle = 0, g_FragHandle = 0;
 static int          g_AttribLocationTex = 0, g_AttribLocationProjMtx = 0;
