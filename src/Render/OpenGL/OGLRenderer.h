@@ -18,7 +18,7 @@ protected:
     };
 
     struct VAO {
-        BaseShaderProgram *shaderProgram;
+        ResourceId shaderId;
         Mesh *mesh;
         GLuint vao;
     };
@@ -28,9 +28,14 @@ protected:
 
     GLint maxVtxAttribs;
 
+    Array<ResourceId> unloadedMeshes;
+    Array<ResourceId> unloadedShaders;
+    Array<uint32_t>   rtDestroyed;
+
     void SetRenderModeState(const RenderModeState *lastState, const RenderModeState &thisState);
     void CreateFBO(RenderTarget *rt, CubeFace cubeFace);
-    void CreateVAO(BaseShaderProgram *shaderProgram, Mesh *mesh);
+    void CreateVAO(const WeakPtr<Shader> &shader, Mesh *mesh);
+    void FreeUnusedObjects();
 
     void ApplyFloatParams(OGLShaderProgram *program, const Material::FloatParam *begin, const Material::FloatParam *end);
     void ApplyVectorParams(OGLShaderProgram *program, const Material::VectorParam *begin, const Material::VectorParam *end);
@@ -51,9 +56,9 @@ public:
     bool Dispatch(ResourceId computeShaderId, uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ, const MaterialParamsBlock &params);
     void EndFrame();
 
+    void OnEndFrameCommands();
     void OnMeshUnloaded(Mesh *mesh);
     void OnShaderUnloaded(Shader *shader);
-    void OnRenderTargetCreated(RenderTarget *rt);
     void OnRenderTargetDestroyed(RenderTarget *rt);
 };
 

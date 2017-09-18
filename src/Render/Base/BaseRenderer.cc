@@ -142,6 +142,10 @@ BaseRenderer::EndFrame()
 }
 
 void
+BaseRenderer::OnEndFrameCommands()
+{ }
+
+void
 BaseRenderer::OnMeshLoaded(Mesh *mesh)
 { }
 

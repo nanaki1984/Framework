@@ -63,6 +63,7 @@ RenderQueue::EndFrameCommands()
 		std::unique_lock<std::mutex> lk(m);
 		cv.wait(lk, [this] { return frameCompleted; });
 	}
+    renderer->OnEndFrameCommands();
 	RefCounted::GC.Collect();
 
     std::swap(commands, clientCommands);
@@ -89,7 +90,8 @@ RenderQueue::RenderFrame()
 	for (;;) {
 	std::unique_lock<std::mutex> lk(m);
 	cv.wait(lk, [this] { return newFrame; });
-	newFrame = frameCompleted = false;
+
+    newFrame = frameCompleted = false;
 
     renderer->BeginFrame();
 
@@ -150,7 +152,7 @@ RenderQueue::RenderFrame()
 	frameCompleted = true;
 	lk.unlock();
 	cv.notify_one();
-	} // for(;;)
+	} // for (;;)
 
 	glfwMakeContextCurrent(nullptr);
 }

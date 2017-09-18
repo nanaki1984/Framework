@@ -221,8 +221,6 @@ RenderersManager::OnLateUpdate()
 void
 RenderersManager::OnRender()
 {
-    float t0 = TimeServer::Instance()->GetMilliseconds();
-
 	this->FreeNodesRecursively(octreeRoot);
 
     Math::Bounds octreeBounds;
@@ -260,9 +258,6 @@ RenderersManager::OnRender()
 		node->renderers.PushBack(rndrIt);
         ++c;
 	}
-
-	float t1 = TimeServer::Instance()->GetMilliseconds();
-    Log::Instance()->Write(Log::Info, "Culling time: %f (renderers: %d)", (t1 - t0), c);
 }
 
 void

@@ -53,6 +53,9 @@ public:
     uint32_t GetFrameCount() const;
     uint32_t GetDrawCallsCount() const;
 
+    /*
+     *  Render Thread Functions
+     */
     bool BeginFrame();
     void ResetRenderTarget();
     void SetRenderTarget(RenderTarget *rt, CubeFace cubeFace);
@@ -62,6 +65,11 @@ public:
     bool DrawMesh(ResourceId meshId, uint8_t subMeshIndex, const MaterialParamsBlock &params);
 	bool Dispatch(ResourceId computeShaderId, uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ, const MaterialParamsBlock &params);
     void EndFrame();
+
+    /*
+     *  Main Thread Functions
+     */
+    void OnEndFrameCommands();
 
     void OnMeshLoaded(Mesh *mesh);
     void OnMeshUnloaded(Mesh *mesh);

@@ -100,6 +100,4 @@ CamInput::Update()
         static bool show_metrics = true;
         ImGui::ShowMetricsWindow(&show_metrics);
     }*/
-
-    Log::Instance()->Write(Log::Info, "fps: %f", 1.0f / dt);
 }

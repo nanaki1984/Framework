@@ -11,7 +11,10 @@ DefineClassInfo(Framework::RHI::OpenGL::OGLRenderer, Framework::RHI::BaseRendere
 
 OGLRenderer::OGLRenderer()
 : fboHash(Memory::GetAllocator<MallocAllocator>()),
-  vaoHash(Memory::GetAllocator<MallocAllocator>())
+  vaoHash(Memory::GetAllocator<MallocAllocator>()),
+  unloadedMeshes(Memory::GetAllocator<MallocAllocator>()),
+  unloadedShaders(Memory::GetAllocator<MallocAllocator>()),
+  rtDestroyed(Memory::GetAllocator<MallocAllocator>())
 {
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxVtxAttribs);
 }
@@ -144,15 +147,14 @@ OGLRenderer::CreateFBO(RenderTarget *rt, CubeFace cubeFace)
     assert2(GL_FRAMEBUFFER_COMPLETE == fboStatus, "FBO status error!");
 #endif
 
-    // ToDo: mutex on fboHash
     fboHash.Add(rt->GetId(), fbo);
 }
 
 void
-OGLRenderer::CreateVAO(BaseShaderProgram *shaderProgram, Mesh *mesh)
+OGLRenderer::CreateVAO(const WeakPtr<Shader> &shader, Mesh *mesh)
 {
     VAO vao;
-    vao.shaderProgram = shaderProgram;
+    vao.shaderId = shader->GetId();
     vao.mesh = mesh;
 #ifdef __APPLE__
     glGenVertexArraysAPPLE(1, &vao.vao);
@@ -161,6 +163,8 @@ OGLRenderer::CreateVAO(BaseShaderProgram *shaderProgram, Mesh *mesh)
     glGenVertexArrays(1, &vao.vao);
     glBindVertexArray(vao.vao);
 #endif
+
+    OGLShaderProgram *shaderProgram = shader->GetProgram();
 
     const VertexDecl &vertexDecl = mesh->GetVertexDecl();
     OGLVertexBuffer *vb = static_cast<OGLVertexBuffer*>(mesh->GetVertexBuffer().Get());
@@ -182,11 +186,6 @@ OGLRenderer::CreateVAO(BaseShaderProgram *shaderProgram, Mesh *mesh)
 
         switch (elem.type) {
             case VertexDecl::XYZ:
-                /*glEnableClientState(GL_VERTEX_ARRAY);
-                glVertexPointer(elem.size / 4,
-                                GL_FLOAT,
-                                vtxSize,
-                                ((char *)nullptr) + elem.offset);*/
                 if (shaderProgram->TryGetParam("position", shdParam)) {
                     glEnableVertexAttribArray(shdParam.regOrIndex);
                     glVertexAttribPointer(shdParam.regOrIndex,
@@ -304,8 +303,56 @@ OGLRenderer::CreateVAO(BaseShaderProgram *shaderProgram, Mesh *mesh)
 
     CheckOGLErrors("VertexArrayObject");
 
-    // ToDo: mutex on vaoHash
     vaoHash.Add(mesh->GetId(), vao);
+}
+
+void
+OGLRenderer::FreeUnusedObjects()
+{
+    for (auto it = unloadedMeshes.Begin(), end = unloadedMeshes.End(); it != end; ++it)
+    {
+        VAO *vao = vaoHash.Get(*it);
+        while (vao != nullptr) {
+            VAO *tmp = vao;
+#ifdef __APPLE__
+            glDeleteVertexArraysAPPLE(1, &vao->vao);
+#else
+            glDeleteVertexArrays(1, &vao->vao);
+#endif
+            vao = vaoHash.Next(vao);
+            vaoHash.Remove(tmp);
+        }
+    }
+    unloadedMeshes.Clear();
+
+    for (auto it = unloadedShaders.Begin(), end = unloadedShaders.End(); it != end; ++it)
+    {
+        VAO *hashIt = vaoHash.Begin();
+        while (hashIt < vaoHash.End()) {
+            if (hashIt->shaderId == (*it)) {
+#ifdef __APPLE__
+                glDeleteVertexArraysAPPLE(1, &hashIt->vao);
+#else
+                glDeleteVertexArrays(1, &hashIt->vao);
+#endif
+                vaoHash.Remove(hashIt);
+            }
+            else ++hashIt;
+        }
+    }
+    unloadedShaders.Clear();
+
+    for (auto it = rtDestroyed.Begin(), end = rtDestroyed.End(); it != end; ++it)
+    {
+        FBO *fbo = fboHash.Get(*it);
+        while (fbo != nullptr) {
+            FBO *tmp = fbo;
+            glDeleteFramebuffers(1, &tmp->fbo);
+            fbo = fboHash.Next(fbo);
+            fboHash.Remove(tmp);
+        }
+    }
+    rtDestroyed.Clear();
 }
 
 void
@@ -421,7 +468,6 @@ OGLRenderer::SetRenderTarget(RenderTarget *rt, CubeFace cubeFace)
 {
     BaseRenderer::SetRenderTarget(rt, cubeFace);
 
-    // ToDo: mutex on fboHash
     FBO *fbo = fboHash.Get(rt->GetId());
     while (fbo != nullptr) {
         if (fbo->rt == rt && fbo->cubeFace == cubeFace)
@@ -522,13 +568,13 @@ OGLRenderer::DrawMesh(ResourceId meshId, uint8_t subMeshIndex, const MaterialPar
     if (BaseRenderer::DrawMesh(meshId, subMeshIndex, params)) {
         VAO *vao = vaoHash.Get(meshId);
         while (vao != nullptr) {
-            if (vao->shaderProgram == lastShader->GetProgram())
+            if (vao->shaderId == lastShader->GetId())
                 break;
             vao = vaoHash.Next(vao);
         }
 
         if (nullptr == vao)
-            this->CreateVAO(lastShader->GetProgram(), lastMesh);
+            this->CreateVAO(lastShader, lastMesh);
         else {
 #ifdef __APPLE__
             glBindVertexArrayAPPLE(vao->vao);
@@ -638,57 +684,27 @@ OGLRenderer::EndFrame()
 }
 
 void
+OGLRenderer::OnEndFrameCommands()
+{
+    this->FreeUnusedObjects();
+}
+
+void
 OGLRenderer::OnMeshUnloaded(Mesh *mesh)
 {
-    // ToDo: mutex on vaoHash
-    VAO *vao = vaoHash.Get(mesh->GetId());
-    while (vao != nullptr) {
-        VAO *tmp = vao;
-#ifdef __APPLE__
-        glDeleteVertexArraysAPPLE(1, &vao->vao);
-#else
-        glDeleteVertexArrays(1, &vao->vao);
-#endif
-        vao = vaoHash.Next(vao);
-        vaoHash.Remove(tmp);
-    }
+    unloadedMeshes.PushBack(mesh->GetId());
 }
 
 void
 OGLRenderer::OnShaderUnloaded(Shader *shader)
 {
-    // ToDo: mutex on vaoHash
-    VAO *it = vaoHash.Begin();
-    while (it < vaoHash.End()) {
-        if (it->shaderProgram == shader->GetProgram()) {
-#ifdef __APPLE__
-            glDeleteVertexArraysAPPLE(1, &it->vao);
-#else
-            glDeleteVertexArrays(1, &it->vao);
-#endif
-            vaoHash.Remove(it);
-        } else ++it;
-    }
-}
-
-void
-OGLRenderer::OnRenderTargetCreated(RenderTarget *rt)
-{
-    if (!inBeginFrame && BaseTextureBuffer::Texture2D == rt->GetColor()->GetBuffer()->GetType())
-        this->CreateFBO(rt, CubeFace::PositiveX);
+    unloadedShaders.PushBack(shader->GetId());
 }
 
 void
 OGLRenderer::OnRenderTargetDestroyed(RenderTarget *rt)
 {
-    // ToDo: mutex on fboHash
-    FBO *fbo = fboHash.Get(rt->GetId());
-    while (fbo != nullptr) {
-        FBO *tmp = fbo;
-        glDeleteFramebuffers(1, &tmp->fbo);
-        fbo = fboHash.Next(fbo);
-        fboHash.Remove(tmp);
-    }
+    rtDestroyed.PushBack(rt->GetId());
 }
 
 		} // namespace OpenGL

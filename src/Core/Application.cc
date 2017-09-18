@@ -120,8 +120,6 @@ Application::Tick()
 {
 	//ImGui_ImplGlfwGL3_NewFrame();
 
-    float t0 = TimeServer::Instance()->GetMilliseconds();
-
 	timeServer->Tick();
 
     // physics
@@ -139,9 +137,6 @@ Application::Tick()
 	for (it = managers.Begin(); it != end; ++it)
 		(*it)->OnRender();
 	renderQueue->EndFrameCommands();
-
-    float t1 = TimeServer::Instance()->GetMilliseconds();
-    Log::Instance()->Write(Log::Info, "frame time: %f", (t1 - t0));
 }
 
 const SmartPtr<BaseManager>&

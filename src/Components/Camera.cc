@@ -82,8 +82,6 @@ Camera::Deserialize(SerializationServer *server, const BitStream &stream)
 void
 Camera::Render()
 {
-    float t0 = TimeServer::Instance()->GetMilliseconds();
-
 	Math::Matrix view     = entity->GetTransform()->GetWorldToLocal(),
                  viewProj = view * this->GetProjection();
 
@@ -140,9 +138,6 @@ Camera::Render()
             }
         }
     }
-
-	float t1 = TimeServer::Instance()->GetMilliseconds();
-    Log::Instance()->Write(Log::Info, "Render camera time: %f (renderers: %d)", (t1 - t0), count);
 }
 
 const Rect&
