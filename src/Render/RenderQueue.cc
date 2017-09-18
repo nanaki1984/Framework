@@ -15,9 +15,10 @@ DefineClassInfo(Framework::RenderQueue, Framework::RefCounted);
 
 RenderQueue::RenderQueue()
 : paramsBlocks(Memory::GetAllocator<MallocAllocator>()),
-  renderTargets(Memory::GetAllocator<MallocAllocator>()),
+  clientParamsBlocks(Memory::GetAllocator<MallocAllocator>()),
   commands(Memory::GetAllocator<MallocAllocator>()),
-  commandsCopy(Memory::GetAllocator<MallocAllocator>()),
+  clientCommands(Memory::GetAllocator<MallocAllocator>()),
+  renderTargets(Memory::GetAllocator<MallocAllocator>()),
   renderThread(&RenderQueue::RenderFrame, this),
   newFrame(false),
   frameCompleted(true),
@@ -32,10 +33,8 @@ RenderQueue::~RenderQueue()
 uint32_t
 RenderQueue::GetMaterialParamsBlock(MaterialParamsBlock **outPointer)
 {
-	paramsLock.lock();
-    uint32_t index = paramsBlocks.Allocate();
-	paramsLock.unlock();
-    *outPointer = paramsBlocks.Begin() + index;
+    uint32_t index = clientParamsBlocks.Allocate();
+    *outPointer = clientParamsBlocks.Begin() + index;
     (*outPointer)->Clear();
     return index;
 }
@@ -51,7 +50,7 @@ void
 RenderQueue::SendCommand(RHI::KeyCode command)
 {
 	assert(inBeginFrameCmds);
-	commandsCopy.PushBack(command);
+    clientCommands.PushBack(command);
 }
 
 void
@@ -66,29 +65,25 @@ RenderQueue::EndFrameCommands()
 	}
 	RefCounted::GC.Collect();
 
-	commands.Clear();
-	commands.InsertRange(0, commandsCopy.Begin(), commandsCopy.Count());
-	commandsCopy.Clear(); // ToDo: swap
+    std::swap(commands, clientCommands);
+    std::swap(paramsBlocks, clientParamsBlocks);
 	
-	{
+    assert(0 == clientCommands.Count());
+    assert(0 == clientParamsBlocks.Count());
+
+    {
 		std::lock_guard<std::mutex> lk(m);
 		newFrame = true;
 	}
 	cv.notify_one();
-
-	//commands.Clear();
-	//commands.InsertRange(0, commandsCopy.Begin(), commandsCopy.Count());
-	//commandsCopy.Clear();
-	//this->RenderFrame();
-	//RefCounted::GC.Collect();
 }
 
 void
 RenderQueue::RenderFrame()
 {
-	GLFWwindow *win = Application::Instance()->GetRenderThreadWindow();
-	glfwMakeContextCurrent(win);
-    glfwSwapInterval(0);// 1);
+	GLFWwindow *ctx = Application::Instance()->GetRenderingContext();
+	glfwMakeContextCurrent(ctx);
+    glfwSwapInterval(0);
     glewInit();
 
 	for (;;) {
@@ -96,7 +91,6 @@ RenderQueue::RenderFrame()
 	cv.wait(lk, [this] { return newFrame; });
 	newFrame = frameCompleted = false;
 
-    //GLFWwindow *win = Application::Instance()->GetRenderThreadWindow();
     renderer->BeginFrame();
 
     uint32_t cmdsCount = commands.Count();
@@ -125,39 +119,33 @@ RenderQueue::RenderFrame()
                 {
                     int x, y, z;
                     key.GetNumWorkGroups(x, y, z);
-					paramsLock.lock();
 					const MaterialParamsBlock &params = paramsBlocks.Get(key.GetDispatchParamsBlockId());
-					paramsLock.unlock();
 					renderer->Dispatch(key.GetComputeShaderId(), x, y, z, params);
-					paramsLock.lock();
 					paramsBlocks.Free(key.GetDispatchParamsBlockId());
-					paramsLock.unlock();
 					break;
                 }
                 case RHI::Key::kCommandDrawCall:
 					if (renderer->SetMaterialPass(key.GetMaterialId(), key.GetMaterialPass()))
 					{
-						paramsLock.lock();
 						const MaterialParamsBlock &params = paramsBlocks.Get(key.GetParamsBlockId());
-						paramsLock.unlock();
 						renderer->DrawMesh(key.GetMeshId(), key.GetSubMeshIndex(), params);
 					}
-					paramsLock.lock();
 					paramsBlocks.Free(key.GetParamsBlockId());
-					paramsLock.unlock();
                     break;
                 default:
                     assert(false);
                     break;
             }
         }
+
+        commands.Clear();
     }
 
     //ImGui::Render();
 
     renderer->EndFrame();
 
-	glfwSwapBuffers(win);
+	glfwSwapBuffers(ctx);
 
 	frameCompleted = true;
 	lk.unlock();

@@ -67,26 +67,22 @@ Application::Initialize(int width, int height)
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 	glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
 
-	renderThreadWindow = glfwCreateWindow(width, height, name, nullptr, nullptr);
-	if (nullptr == renderThreadWindow)
+	renderingContext = glfwCreateWindow(width, height, name, nullptr, nullptr);
+	if (nullptr == renderingContext)
     {
         glfwTerminate();
         return false;
     }
 
-    //glfwMakeContextCurrent(renderThreadWindow);
-    //glfwSwapInterval(0);// 1);
-
 	glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
-	gameWindow = glfwCreateWindow(width, height, name, nullptr, renderThreadWindow);
-	if (nullptr == gameWindow)
+	loadingContext = glfwCreateWindow(width, height, name, nullptr, renderingContext);
+	if (nullptr == loadingContext)
 	{
 		glfwTerminate();
 		return false;
 	}
 
-	glfwMakeContextCurrent(gameWindow);
-
+	glfwMakeContextCurrent(loadingContext);
 	glewInit();
 
     //ImGui_ImplGlfwGL3_Init(gameWindow, true);
@@ -99,7 +95,7 @@ Application::Initialize(int width, int height)
 void
 Application::Run()
 {
-    glfwMakeContextCurrent(gameWindow);
+    glfwMakeContextCurrent(loadingContext);
     
     active = true;
 
@@ -109,7 +105,7 @@ Application::Run()
     {
 		glfwPollEvents();
 
-		if (glfwWindowShouldClose(renderThreadWindow))
+		if (glfwWindowShouldClose(renderingContext))
 		{
 			this->RequestQuit();
 			break;
@@ -246,6 +242,13 @@ Application::DeserializeEntities(const char *filename)
         serializationServer->DeserializeEntities(stream);
     else
         log->Write(Log::Warning, "Cound't open file \"%s\"", filename);
+}
+
+bool
+Application::IsRenderThread()
+{
+    assert(instance != nullptr);
+    return instance->renderQueue->IsRenderThread();
 }
 
 //#if defined(EDITOR)

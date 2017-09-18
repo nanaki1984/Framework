@@ -31,7 +31,7 @@ template <typename T>
 inline
 SimplePool<T>::SimplePool(SimplePool<T> &&other)
 : data(std::forward<Array<T>>(other.data)),
-  indices(std::forward<Queue<T>>(other.indices))
+  indices(std::forward<Queue<uint32_t>>(other.indices))
 { }
 
 template <typename T>
@@ -52,7 +52,8 @@ inline SimplePool<T>&
 SimplePool<T>::operator =(SimplePool<T> &&other)
 {
 	data = std::forward<Array<T>>(other.data);
-	indices = std::forward<Queue<T>>(other.indices);
+	indices = std::forward<Queue<uint32_t>>(other.indices);
+    return (*this);
 }
 
 template <typename T>
@@ -66,7 +67,7 @@ template <typename T>
 inline uint32_t
 SimplePool<T>::Count() const
 {
-    return data.Count();
+    return data.Count() - indices.Count();
 }
 
 template <typename T>

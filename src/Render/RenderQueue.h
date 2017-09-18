@@ -24,12 +24,14 @@ protected:
     SmartPtr<RHI::Renderer> renderer;
 
     SimplePool<MaterialParamsBlock> paramsBlocks;
-    SimplePool<RenderTarget*> renderTargets;
+    SimplePool<MaterialParamsBlock> clientParamsBlocks;
 
     Array<RHI::KeyCode> commands;
-	Array<RHI::KeyCode> commandsCopy;
+	Array<RHI::KeyCode> clientCommands;
 
-	std::mutex m, paramsLock;
+    SimplePool<RenderTarget*> renderTargets;
+    
+    std::mutex m;
 	std::condition_variable cv;
 	std::thread renderThread;
 	bool newFrame, frameCompleted;
@@ -51,12 +53,20 @@ public:
 
     uint32_t RegisterRenderTarget(RenderTarget *rt);
     void UnregisterRenderTarget(uint32_t id);
+
+    bool IsRenderThread() const;
 };
 
 inline const SmartPtr<RHI::Renderer>&
 RenderQueue::GetRenderer() const
 {
     return renderer;
+}
+
+inline bool
+RenderQueue::IsRenderThread() const
+{
+    return std::this_thread::get_id() == renderThread.get_id();
 }
 
 } // namespace Render

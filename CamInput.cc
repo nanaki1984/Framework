@@ -43,7 +43,7 @@ CamInput::Update()
 
     float dt = TimeServer::Instance()->GetDeltaTime();
 
-	GLFWwindow *window = Application::Instance()->GetRenderThreadWindow();
+	GLFWwindow *window = Application::Instance()->GetRenderingContext();
 
 	Vector3 delta = Vector3::Zero;
     if (GLFW_PRESS == glfwGetKey(window, 'W'))

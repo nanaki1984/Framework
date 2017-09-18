@@ -441,6 +441,8 @@ OGLRenderer::SetRenderTarget(RenderTarget *rt, CubeFace cubeFace)
 void
 OGLRenderer::SetViewport(const Viewport &viewport)
 {
+    BaseRenderer::SetViewport(viewport);
+
     glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
     glDepthRange(viewport.minZ, viewport.maxZ);
 
@@ -450,6 +452,8 @@ OGLRenderer::SetViewport(const Viewport &viewport)
 void
 OGLRenderer::Clear(ClearFlags clearFlags, uint32_t color, float depth, uint32_t stencil)
 {
+    BaseRenderer::Clear(clearFlags, color, depth, stencil);
+
     if (ClearNone != clearFlags) {
         GLbitfield oglClearFlags = 0;
 

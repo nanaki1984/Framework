@@ -35,8 +35,8 @@ protected:
 
     Array<SmartPtr<BaseManager>> managers;
 
-	GLFWwindow *gameWindow;
-	GLFWwindow *renderThreadWindow;
+	GLFWwindow *loadingContext;
+	GLFWwindow *renderingContext;
 
     void Tick();
 
@@ -61,8 +61,8 @@ public:
 	int GetScreenWidth() const;
 	int GetScreenHeight() const;
 
-	GLFWwindow* GetGameWindow() const;
-	GLFWwindow* GetRenderThreadWindow() const;
+	GLFWwindow* GetLoadingContext() const;
+	GLFWwindow* GetRenderingContext() const;
 
     void DeserializeEntities(const char *filename);
 
@@ -73,6 +73,8 @@ public:
 //#endif
 
     static Application* Instance();
+
+    static bool IsRenderThread();
 };
 
 inline Application*
@@ -94,15 +96,15 @@ Application::GetScreenHeight() const
 }
 
 inline GLFWwindow*
-Application::GetGameWindow() const
+Application::GetLoadingContext() const
 {
-	return gameWindow;
+	return loadingContext;
 }
 
 inline GLFWwindow*
-Application::GetRenderThreadWindow() const
+Application::GetRenderingContext() const
 {
-	return renderThreadWindow;
+	return renderingContext;
 }
 
 } // namespace Framework
