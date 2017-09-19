@@ -25,6 +25,9 @@ public:
 
     bool Contains(const Rect &r) const;
     bool Intersects(const Rect &r) const;
+
+    bool operator ==(const Rect &r) const;
+    bool operator !=(const Rect &r) const;
 };
 
 } // namespace Framework

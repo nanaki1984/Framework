@@ -1,4 +1,5 @@
 #include "Render/RenderModeState.h"
+#include "Core/Memory/Memory.h"
 
 namespace Framework {
 
@@ -26,7 +27,8 @@ RenderModeState::RenderModeState()
   stencilPass(Keep),
   stencilFailCCW(Keep),
   stencilZFailCCW(Keep),
-  stencilPassCCW(Keep)
+  stencilPassCCW(Keep),
+  scissorTestEnabled(false)
   // ToDo: clip planes
 { }
 
@@ -55,7 +57,9 @@ RenderModeState::operator ==(const RenderModeState &state) const
             (stencilPass == state.stencilPass) &&
             (stencilFailCCW == state.stencilFailCCW) &&
             (stencilZFailCCW == state.stencilZFailCCW) &&
-            (stencilPassCCW == state.stencilPassCCW));
+            (stencilPassCCW == state.stencilPassCCW) &&
+            (scissorTestEnabled == state.scissorTestEnabled) &&
+            (!scissorTestEnabled || 0 == Memory::Compare(scissorTestRect, state.scissorTestRect, 4)));
             // ToDo: clip planes
 }
 

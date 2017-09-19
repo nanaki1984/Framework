@@ -19,6 +19,7 @@
 #include <GLFW/glfw3native.h>
 #endif
 
+#include "Core/Memory/MallocAllocator.h"
 #include "Render/Resources/Mesh.h"
 #include "Render/Resources/Material.h"
 #include "Render/Resources/Shader.h"
@@ -34,26 +35,66 @@ static float        g_MouseWheel = 0.0f;
 
 struct UIMesh
 {
-	RHI::VertexBufferDesc vbDesc;
-	RHI::IndexBufferDesc  ibDesc;
-	WeakPtr<Mesh>         mesh;
-
-	UIMesh(int index, int nVertices, int nIndices, int nDrawCalls)
+private:
+	RHI::VertexBufferDesc    vbDesc;
+	RHI::IndexBufferDesc     ibDesc;
+	WeakPtr<Mesh>            mesh;
+    Array<WeakPtr<Material>> materials;
+public:
+    UIMesh(int index, int nVertices, int nIndices, int nDrawCalls)
+    : materials(Memory::GetAllocator<MallocAllocator>())
 	{
-		vbDesc.flags = RHI::HardwareBuffer::Dynamic;
+		vbDesc.flags     = RHI::HardwareBuffer::Dynamic;
 		vbDesc.nVertices = nVertices;
 
-		vbDesc.vertexDecl.AddVertexElement(RHI::VertexDecl::XYZ, RHI::VertexDecl::Float2);
+		vbDesc.vertexDecl.AddVertexElement(RHI::VertexDecl::XYZ,      RHI::VertexDecl::Float2);
 		vbDesc.vertexDecl.AddVertexElement(RHI::VertexDecl::TexCoord, RHI::VertexDecl::Float2);
-		vbDesc.vertexDecl.AddVertexElement(RHI::VertexDecl::Color0, RHI::VertexDecl::Float1);
+		vbDesc.vertexDecl.AddVertexElement(RHI::VertexDecl::Color0,   RHI::VertexDecl::Float1);
 
-		ibDesc.flags = RHI::HardwareBuffer::Dynamic;
-		ibDesc.nIndices = nIndices;
+		ibDesc.flags     = RHI::HardwareBuffer::Dynamic;
+		ibDesc.nIndices  = nIndices;
 		ibDesc.indexSize = RHI::IndexWord;
 
 		mesh = ResourceServer::Instance()->NewResource<Mesh>("uiMesh", Resource::ReadOnly);
-	}
+        mesh->Load(std::move(vbDesc), ibDesc, nDrawCalls);
+
+        for (int i = 0; i < nDrawCalls; ++i)
+        {
+            WeakPtr<Material> mat = ResourceServer::Instance()->NewResource<Material>("uiMaterial", Resource::ReadOnly);
+            mat->SetShader("home:shaders/ui.shader");
+            materials.PushBack(mat);
+        }
+    }
+
+    void Reserve(int nVertices, int nIndices, int nDrawCalls)
+    {
+        if (nVertices > vbDesc.nVertices || nIndices > ibDesc.nIndices)
+        {
+            vbDesc.nVertices = nVertices;
+            ibDesc.nIndices  = nIndices;
+
+            mesh->Load(std::move(vbDesc), ibDesc, nDrawCalls);
+        }
+        else if (nDrawCalls > mesh->GetSubMeshCount())
+            mesh->SetSubMeshCount(nDrawCalls);
+
+        for (int i = materials.Count(); i < nDrawCalls; ++i)
+        {
+            WeakPtr<Material> mat = ResourceServer::Instance()->NewResource<Material>("uiMaterial", Resource::ReadOnly);
+            mat->SetShader("home:shaders/ui.shader");
+            materials.PushBack(mat);
+        }
+    }
+
+    void Fill(
+        const ImVector<ImDrawVert> &vertices,
+        const ImVector<ImDrawIdx>  &indices,
+        const ImVector<ImDrawCmd>  &drawCalls)
+    {
+
+    }
 };
+
 static Array<UIMesh> *uiMeshes;
 
 static GLuint       g_FontTexture = 0;

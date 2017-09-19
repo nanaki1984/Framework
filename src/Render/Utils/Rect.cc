@@ -82,4 +82,18 @@ Rect::Intersects(const Rect &r) const
              Math::Vector2::GreaterAny(min, r.max));
 }
 
+bool
+Rect::operator ==(const Rect &r) const
+{
+    return min == r.min &&
+           max == r.max;
+}
+
+bool
+Rect::operator !=(const Rect &r) const
+{
+    return min != r.min ||
+           max != r.max;
+}
+
 } // namespace Framework

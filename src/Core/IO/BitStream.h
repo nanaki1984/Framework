@@ -5,6 +5,14 @@
 #include "Core/String.h"
 #include "Core/Memory/ScratchAllocator.h"
 
+#ifdef min
+#   undef min
+#endif
+
+#ifdef max
+#   undef max
+#endif
+
 namespace Framework {
 
 class BitStream {

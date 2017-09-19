@@ -38,6 +38,8 @@ public:
     void ApplyIndices(uint32_t offset = 0, uint32_t size = 0);
     void Apply();
 
+    void RefreshBounds();
+
     const RHI::VertexDecl& GetVertexDecl() const;
 
     const SmartPtr<RHI::VertexBuffer>& GetVertexBuffer() const;
@@ -47,6 +49,7 @@ public:
     BitStream& GetIndexBufferData(); // TEMP
 
     uint32_t GetSubMeshCount() const;
+    void SetSubMeshCount(int subMeshCount);
 
     const Math::Bounds& GetSubMeshBounds(uint32_t index) const;
     Math::Bounds& GetSubMeshBounds(uint32_t index);

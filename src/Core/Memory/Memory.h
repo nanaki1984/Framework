@@ -109,6 +109,18 @@ void MoveReverse(T *dest, T *src, size_t n)
     }
 }
 
+template <typename T>
+inline int Compare(T *data0, T *data1, size_t n)
+{
+    return memcmp(data0, data1, sizeof(T) * n);
+}
+
+template <>
+inline int Compare(void *data0, void *data1, size_t n)
+{
+    return memcmp(data0, data1, n);
+}
+
 void InitializeMemory();
 void ShutdownMemory();
 

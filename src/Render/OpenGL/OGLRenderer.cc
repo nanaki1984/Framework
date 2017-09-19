@@ -88,6 +88,22 @@ OGLRenderer::SetRenderModeState(const RenderModeState *lastState, const RenderMo
 
     // ToDo: Alpha test
     // ToDo: Stencil
+
+    if (nullptr == lastState ||
+        lastState->scissorTestEnabled != thisState.scissorTestEnabled ||
+        (thisState.scissorTestEnabled && lastState->scissorTestRect != thisState.scissorTestRect))
+    {
+        if (thisState.scissorTestEnabled)
+        {
+            if (!lastState->scissorTestEnabled)
+                glEnable(GL_SCISSOR_TEST);
+
+            glScissor(thisState.scissorTestRect[0], thisState.scissorTestRect[1], thisState.scissorTestRect[2], thisState.scissorTestRect[3]);
+        }
+        else
+            glDisable(GL_SCISSOR_TEST);
+    }
+
     // ToDo: clip planes
 
     lastState = &thisState;

@@ -309,4 +309,18 @@ Mesh::Apply()
     indexBuffer->Upload(lockInfo, indexBufferData.GetData());
 }
 
+void
+Mesh::RefreshBounds()
+{
+    // ToDo
+}
+
+void
+Mesh::SetSubMeshCount(int subMeshCount)
+{
+    assert(subMeshCount > 0);
+    subMeshesBounds.Resize(subMeshCount);
+    subMeshesPrimitives.Resize(subMeshCount);
+}
+
 } // namespace Framework

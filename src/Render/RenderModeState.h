@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "Core/EnumStrings.h"
+#include "Render/Utils/Rect.h"
 
 namespace Framework {
 
@@ -87,6 +88,9 @@ struct RenderModeState {
         Dec,
     } stencilFail, stencilZFail, stencilPass,
       stencilFailCCW, stencilZFailCCW, stencilPassCCW;
+
+    bool scissorTestEnabled;
+    int scissorTestRect[4];
 
     // ToDo: clip planes
 
