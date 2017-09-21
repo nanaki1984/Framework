@@ -1,5 +1,7 @@
 #include "Render/Resources/Resource.h"
 #include "Render/Resources/ResourceServer.h"
+#include "Core/Collections/List.h"
+#include "Render/RenderQueue.h"
 
 namespace Framework {
 
@@ -8,7 +10,8 @@ DefineAbstractClassInfo(Framework::Resource, Framework::Trackable);
 Resource::Resource()
 : size(0),
   isLoaded(false),
-  access(ReadOnly)
+  access(ReadOnly),
+  lastFrameUsed(-1)
 { }
 
 Resource::~Resource()
@@ -59,6 +62,18 @@ Resource::Clone()
         return ResourceServer::Instance()->NewResource(*this->GetRTTI(), name, Writable);
     else
         return ResourceServer::Instance()->NewResourceFromFile(*this->GetRTTI(), this->GetFilename().AsCString(), Writable);
+}
+
+bool
+Resource::PrepareForRendering(RenderQueue *renderQueue)
+{
+    if (renderQueue->GetFrameCount() == lastFrameUsed)
+        return false;
+
+    renderQueue->RegisterResource(this);
+    lastFrameUsed = renderQueue->GetFrameCount();
+
+    return true;
 }
 
 } // namespace Framework

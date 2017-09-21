@@ -37,11 +37,11 @@ protected:
     void CreateVAO(const WeakPtr<Shader> &shader, Mesh *mesh);
     void FreeUnusedObjects();
 
-    void ApplyFloatParams(OGLShaderProgram *program, const Material::FloatParam *begin, const Material::FloatParam *end);
-    void ApplyVectorParams(OGLShaderProgram *program, const Material::VectorParam *begin, const Material::VectorParam *end);
-    void ApplyMatrixParams(OGLShaderProgram *program, const Material::MatrixParam *begin, const Material::MatrixParam *end);
-    void ApplyTextureParams(OGLShaderProgram *program, const Material::TextureParam *begin, const Material::TextureParam *end);
-    void ApplyBufferParams(OGLShaderProgram *program, const Material::BufferParam *begin, const Material::BufferParam *end);
+    void ApplyFloatParams(OGLShaderProgram *program, const Materials::FloatParam *begin, const Materials::FloatParam *end);
+    void ApplyVectorParams(OGLShaderProgram *program, const Materials::VectorParam *begin, const Materials::VectorParam *end);
+    void ApplyMatrixParams(OGLShaderProgram *program, const Materials::MatrixParam *begin, const Materials::MatrixParam *end);
+    void ApplyTextureParams(OGLShaderProgram *program, const Materials::TextureParam *begin, const Materials::TextureParam *end);
+    void ApplyBufferParams(OGLShaderProgram *program, const Materials::BufferParam *begin, const Materials::BufferParam *end);
 public:
     OGLRenderer();
     virtual ~OGLRenderer();

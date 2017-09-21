@@ -1,4 +1,5 @@
 #include "Render/MaterialParamsBlock.h"
+#include "Core/Collections/Array.h"
 #include "Core/Memory/MallocAllocator.h"
 
 namespace Framework {
@@ -20,11 +21,11 @@ MaterialParamsBlock::MaterialParamsBlock(const MaterialParamsBlock &other)
 { }
 
 MaterialParamsBlock::MaterialParamsBlock(MaterialParamsBlock &&other)
-: floatParams  (std::forward<Array<Material::FloatParam>>  (other.floatParams)),
-  vectorParams (std::forward<Array<Material::VectorParam>> (other.vectorParams)),
-  matrixParams (std::forward<Array<Material::MatrixParam>> (other.matrixParams)),
-  textureParams(std::forward<Array<Material::TextureParam>>(other.textureParams)),
-  bufferParams (std::forward<Array<Material::BufferParam>> (other.bufferParams))
+: floatParams  (std::forward<Array<Materials::FloatParam>>  (other.floatParams)),
+  vectorParams (std::forward<Array<Materials::VectorParam>> (other.vectorParams)),
+  matrixParams (std::forward<Array<Materials::MatrixParam>> (other.matrixParams)),
+  textureParams(std::forward<Array<Materials::TextureParam>>(other.textureParams)),
+  bufferParams (std::forward<Array<Materials::BufferParam>> (other.bufferParams))
 { }
 
 MaterialParamsBlock::~MaterialParamsBlock()
@@ -44,11 +45,11 @@ MaterialParamsBlock::operator =(const MaterialParamsBlock &other)
 MaterialParamsBlock&
 MaterialParamsBlock::operator =(MaterialParamsBlock &&other)
 {
-	floatParams   = std::forward<Array<Material::FloatParam>>  (other.floatParams);
-	vectorParams  = std::forward<Array<Material::VectorParam>> (other.vectorParams);
-	matrixParams  = std::forward<Array<Material::MatrixParam>> (other.matrixParams);
-    textureParams = std::forward<Array<Material::TextureParam>>(other.textureParams);
-    bufferParams  = std::forward<Array<Material::BufferParam>> (other.bufferParams);
+	floatParams   = std::forward<Array<Materials::FloatParam>>  (other.floatParams);
+	vectorParams  = std::forward<Array<Materials::VectorParam>> (other.vectorParams);
+	matrixParams  = std::forward<Array<Materials::MatrixParam>> (other.matrixParams);
+    textureParams = std::forward<Array<Materials::TextureParam>>(other.textureParams);
+    bufferParams  = std::forward<Array<Materials::BufferParam>> (other.bufferParams);
 	return (*this);
 }
 
@@ -68,13 +69,19 @@ MaterialParamsBlock::AddFloat(const StringHash &name, float value)
     floatParams.PushBack({ name, value });
 }
 
-const Material::FloatParam*
+void
+MaterialParamsBlock::AddFloat(const Materials::FloatParam &param)
+{
+    floatParams.PushBack(param);
+}
+
+const Materials::FloatParam*
 MaterialParamsBlock::FloatParamsBegin() const
 {
     return floatParams.Begin();
 }
 
-const Material::FloatParam*
+const Materials::FloatParam*
 MaterialParamsBlock::FloatParamsEnd() const
 {
     return floatParams.End();
@@ -86,13 +93,19 @@ MaterialParamsBlock::AddVector(const StringHash &name, const Math::Vector4 &valu
     vectorParams.PushBack({ name, value });
 }
 
-const Material::VectorParam*
+void
+MaterialParamsBlock::AddVector(const Materials::VectorParam &param)
+{
+    vectorParams.PushBack(param);
+}
+
+const Materials::VectorParam*
 MaterialParamsBlock::VectorParamsBegin() const
 {
     return vectorParams.Begin();
 }
 
-const Material::VectorParam*
+const Materials::VectorParam*
 MaterialParamsBlock::VectorParamsEnd() const
 {
     return vectorParams.End();
@@ -104,13 +117,19 @@ MaterialParamsBlock::AddMatrix(const StringHash &name, const Math::Matrix &value
     matrixParams.PushBack({ name, value });
 }
 
-const Material::MatrixParam*
+void
+MaterialParamsBlock::AddMatrix(const Materials::MatrixParam &param)
+{
+    matrixParams.PushBack(param);
+}
+
+const Materials::MatrixParam*
 MaterialParamsBlock::MatrixParamsBegin() const
 {
     return matrixParams.Begin();
 }
 
-const Material::MatrixParam*
+const Materials::MatrixParam*
 MaterialParamsBlock::MatrixParamsEnd() const
 {
     return matrixParams.End();
@@ -122,13 +141,19 @@ MaterialParamsBlock::AddTexture(const StringHash &name, const WeakPtr<Texture> &
     textureParams.PushBack({ name, value });
 }
 
-const Material::TextureParam*
+void
+MaterialParamsBlock::AddTexture(const Materials::TextureParam &param)
+{
+    textureParams.PushBack(param);
+}
+
+const Materials::TextureParam*
 MaterialParamsBlock::TextureParamsBegin() const
 {
     return textureParams.Begin();
 }
 
-const Material::TextureParam*
+const Materials::TextureParam*
 MaterialParamsBlock::TextureParamsEnd() const
 {
     return textureParams.End();
@@ -140,13 +165,19 @@ MaterialParamsBlock::AddBuffer(const StringHash &name, const SmartPtr<RHI::Compu
 	bufferParams.PushBack({ name, value });
 }
 
-const Material::BufferParam*
+void
+MaterialParamsBlock::AddBuffer(const Materials::BufferParam &param)
+{
+    bufferParams.PushBack(param);
+}
+
+const Materials::BufferParam*
 MaterialParamsBlock::BufferParamsBegin() const
 {
 	return bufferParams.Begin();
 }
 
-const Material::BufferParam*
+const Materials::BufferParam*
 MaterialParamsBlock::BufferParamsEnd() const
 {
 	return bufferParams.End();

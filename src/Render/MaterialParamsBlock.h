@@ -1,16 +1,37 @@
 #pragma once
 
-#include "Render/Resources/Material.h"
+#include "Core/StringHash.h"
+#include "Math/Vector4.h"
+#include "Math/Matrix.h"
+#include "Core/SmartPtr.h"
+#include "Core/WeakPtr.h"
+#include "Render/Resources/Texture.h"
+#include "Render/RenderObjects.h"
 
 namespace Framework {
+    namespace Materials {
+
+template <typename T>
+struct Param {
+    StringHash name;
+    T		   value;
+};
+
+typedef Param<float>		                FloatParam;
+typedef Param<Math::Vector4>                VectorParam;
+typedef Param<Math::Matrix>                 MatrixParam;
+typedef Param<WeakPtr<Texture>>             TextureParam;
+typedef Param<SmartPtr<RHI::ComputeBuffer>> BufferParam;
+
+    } // namespace Materials
 
 class MaterialParamsBlock {
 private:
-    Array<Material::FloatParam>   floatParams;
-    Array<Material::VectorParam>  vectorParams;
-    Array<Material::MatrixParam>  matrixParams;
-    Array<Material::TextureParam> textureParams;
-	Array<Material::BufferParam>  bufferParams;
+    Array<Materials::FloatParam>   floatParams;
+    Array<Materials::VectorParam>  vectorParams;
+    Array<Materials::MatrixParam>  matrixParams;
+    Array<Materials::TextureParam> textureParams;
+	Array<Materials::BufferParam>  bufferParams;
 public:
     MaterialParamsBlock();
     MaterialParamsBlock(const MaterialParamsBlock &other);
@@ -23,24 +44,29 @@ public:
     void Clear();
 
     void AddFloat(const StringHash &name, float value);
-    const Material::FloatParam* FloatParamsBegin() const;
-    const Material::FloatParam* FloatParamsEnd() const;
+    void AddFloat(const Materials::FloatParam &param);
+    const Materials::FloatParam* FloatParamsBegin() const;
+    const Materials::FloatParam* FloatParamsEnd() const;
 
     void AddVector(const StringHash &name, const Math::Vector4 &value);
-    const Material::VectorParam* VectorParamsBegin() const;
-    const Material::VectorParam* VectorParamsEnd() const;
+    void AddVector(const Materials::VectorParam &param);
+    const Materials::VectorParam* VectorParamsBegin() const;
+    const Materials::VectorParam* VectorParamsEnd() const;
 
     void AddMatrix(const StringHash &name, const Math::Matrix &value);
-    const Material::MatrixParam* MatrixParamsBegin() const;
-    const Material::MatrixParam* MatrixParamsEnd() const;
+    void AddMatrix(const Materials::MatrixParam &value);
+    const Materials::MatrixParam* MatrixParamsBegin() const;
+    const Materials::MatrixParam* MatrixParamsEnd() const;
 
     void AddTexture(const StringHash &name, const WeakPtr<Texture> &value);
-    const Material::TextureParam* TextureParamsBegin() const;
-    const Material::TextureParam* TextureParamsEnd() const;
+    void AddTexture(const Materials::TextureParam &value);
+    const Materials::TextureParam* TextureParamsBegin() const;
+    const Materials::TextureParam* TextureParamsEnd() const;
     
     void AddBuffer(const StringHash &name, const SmartPtr<RHI::ComputeBuffer> &value);
-	const Material::BufferParam* BufferParamsBegin() const;
-	const Material::BufferParam* BufferParamsEnd() const;
+    void AddBuffer(const Materials::BufferParam &value);
+    const Materials::BufferParam* BufferParamsBegin() const;
+	const Materials::BufferParam* BufferParamsEnd() const;
 };
 
 } // namespace Framework

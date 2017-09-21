@@ -1,13 +1,39 @@
 #pragma once
 
 #include "Core/SmartPtr.h"
-#include "Render/Resources/Resource.h"
+#include "Render/Resources/RenderResource.h"
 #include "Render/RenderObjects.h"
 #include "Render/Image/Image.h"
 
 namespace Framework {
+        namespace RHI {
 
-class Texture : public Resource {
+struct TextureRenderData : RenderData
+{
+    SmartPtr<RHI::TextureBuffer> buffer;
+
+    TextureRenderData()
+    { }
+    TextureRenderData(TextureRenderData &&other)
+    {
+        buffer = std::forward<SmartPtr<RHI::TextureBuffer>>(other.buffer);
+    }
+
+    TextureRenderData& operator = (TextureRenderData &&other)
+    {
+        buffer = std::forward<SmartPtr<RHI::TextureBuffer>>(other.buffer);
+        return (*this);
+    }
+
+    void Invalidate()
+    {
+        buffer.Reset();
+    }
+};
+
+    } // namespace RHI
+
+class Texture : public RenderResource<RHI::TextureRenderData> {
     DeclareClassInfo;
 protected:
     SmartPtr<RHI::TextureBuffer> buffer;
@@ -43,6 +69,8 @@ public:
 */
     void LoadImages();
     void FreeImages();
+
+    bool PrepareForRendering(RenderQueue *renderQueue);
 };
 
 inline const SmartPtr<RHI::TextureBuffer>&

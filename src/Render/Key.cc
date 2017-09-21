@@ -1,5 +1,6 @@
 #include "Render/Key.h"
 #include "Math/Math.h"
+#include "Core/Application.h"
 
 namespace Framework {
     namespace RHI {
@@ -231,6 +232,9 @@ Key::Dispatch(const WeakPtr<ComputeShader> &computeShader,
               uint16_t _paramsBlockId)
 {
     assert(isCommand);
+
+    computeShader->PrepareForRendering(Application::GetRenderQueue());
+
     commandId = kCommandDispatch;
     computeShaderId = computeShader->GetId();
     numGroupsX = _numGroupsX;
@@ -249,6 +253,9 @@ Key::DrawCall(uint8_t _sortingOrder,
               uint16_t _paramsBlockId,
               float _depth)
 {
+    material->PrepareForRendering(Application::GetRenderQueue());
+    mesh->PrepareForRendering(Application::GetRenderQueue());
+
     isCommand = false;
     translucency = material->GetShader()->GetProgram()->GetTranslucency();
     sortingOrder = _sortingOrder;

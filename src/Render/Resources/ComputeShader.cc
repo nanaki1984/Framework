@@ -116,4 +116,13 @@ ComputeShader::ComputeSize()
     return 0;
 }
 
+bool
+ComputeShader::PrepareForRendering(RenderQueue *renderQueue)
+{
+    if (RenderResource<RHI::ComputeShaderRenderData>::PrepareForRendering(renderQueue))
+        clientRenderData.program = program;
+
+    return true;
+}
+
 } // namespace Framework

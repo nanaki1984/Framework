@@ -3,10 +3,13 @@
 #include "Core/Trackable.h"
 #include "Core/WeakPtr.h"
 #include "Core/String.h"
+#include "Core/Collections/List_type.h"
 #include "Render/Resources/ResourceId.h"
 #include "Render/Resources/ResourceName.h"
 
 namespace Framework {
+
+class RenderQueue;
 
 class Resource : public Trackable {
     DeclareClassInfo;
@@ -26,11 +29,16 @@ protected:
     WeakPtr<Resource> cloneSource;
     Access            access;
 
+    ListNode<Resource> node;
+    int                lastFrameUsed;
+
     virtual bool LoadImpl() = 0;
     virtual void UnloadImpl() = 0;
     virtual bool CloneImpl(WeakPtr<Resource> source) = 0;
     virtual uint32_t ComputeSize() = 0;
 public:
+    typedef List<Resource, &Resource::node> IntrusiveList;
+
     Resource();
     virtual ~Resource();
 
@@ -59,6 +67,9 @@ public:
     bool Load();
     void Unload();
     WeakPtr<Resource> Clone();
+
+    bool PrepareForRendering(RenderQueue *renderQueue);
+    virtual void OnEndFrameCommands() = 0;
 };
 
 inline uint32_t

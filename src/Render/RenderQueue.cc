@@ -19,6 +19,7 @@ RenderQueue::RenderQueue()
   commands(Memory::GetAllocator<MallocAllocator>()),
   clientCommands(Memory::GetAllocator<MallocAllocator>()),
   renderTargets(Memory::GetAllocator<MallocAllocator>()),
+  frameCount(0),
   renderThread(&RenderQueue::RenderFrames, this),
   newFrame(false),
   frameCompleted(true),
@@ -35,7 +36,10 @@ RenderQueue::~RenderQueue()
         while (!frameCompleted)
             rtSignal.wait(lock);
     }
+
     renderer->OnEndFrameCommands();
+
+    resourcesList.Clear();
 
     {
         std::lock_guard<std::mutex> guard(rtMutex);
@@ -60,6 +64,14 @@ RenderQueue::BeginFrameCommands()
 {
 	assert(!inBeginFrameCmds);
     inBeginFrameCmds = true;
+    resourcesList.Clear();
+}
+
+void
+RenderQueue::RegisterResource(Resource *resource)
+{
+    assert(inBeginFrameCmds);
+    resourcesList.PushBack(resource);
 }
 
 void
@@ -80,8 +92,20 @@ RenderQueue::EndFrameCommands()
         while (!frameCompleted)
             rtSignal.wait(lock);
 	}
+
+    auto *res = resourcesList.Begin();
+    while (res != nullptr)
+    {
+        res->OnEndFrameCommands();
+
+        res = resourcesList.GetNext(res);
+    }
+
     renderer->OnEndFrameCommands();
-	RefCounted::GC.Collect();
+
+    RefCounted::GC.Collect();
+
+    ++frameCount;
 
     std::swap(commands, clientCommands);
     std::swap(paramsBlocks, clientParamsBlocks);

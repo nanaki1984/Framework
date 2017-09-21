@@ -27,6 +27,7 @@ void
 Material::SetShader(const char *filename)
 {
 	shader = ResourceServer::Instance()->NewResourceFromFile<Shader>(filename, ReadOnly);
+    renderMode = shader->GetRenderMode();
 }
 
 void
@@ -49,10 +50,10 @@ Material::UnloadImpl()
 {
     shader.Invalidate();
 
-    floatParams  = Hash<FloatParam>  (Memory::GetAllocator<MallocAllocator>());
-    vectorParams = Hash<VectorParam> (Memory::GetAllocator<MallocAllocator>());
-    matrixParams = Hash<MatrixParam> (Memory::GetAllocator<MallocAllocator>());
-    textures     = Hash<TextureParam>(Memory::GetAllocator<MallocAllocator>());
+    floatParams  = Hash<Materials::FloatParam>  (Memory::GetAllocator<MallocAllocator>());
+    vectorParams = Hash<Materials::VectorParam> (Memory::GetAllocator<MallocAllocator>());
+    matrixParams = Hash<Materials::MatrixParam> (Memory::GetAllocator<MallocAllocator>());
+    textures     = Hash<Materials::TextureParam>(Memory::GetAllocator<MallocAllocator>());
 }
 
 bool
@@ -61,6 +62,7 @@ Material::CloneImpl(WeakPtr<Resource> source)
     Material *mat = source.Cast<Material>();
 
     shader = mat->shader;
+    renderMode = mat->renderMode;
 
     floatParams  = mat->floatParams;
     vectorParams = mat->vectorParams;
@@ -88,13 +90,13 @@ Material::SetFloat(const StringHash &name, float value)
     SetParam(floatParams, name, value);
 }
 
-const Material::FloatParam*
+const Materials::FloatParam*
 Material::FloatParamsBegin() const
 {
     return floatParams.Begin();
 }
 
-const Material::FloatParam*
+const Materials::FloatParam*
 Material::FloatParamsEnd() const
 {
     return floatParams.End();
@@ -112,13 +114,13 @@ Material::SetVector(const StringHash &name, const Math::Vector4 &value)
     SetParam(vectorParams, name, value);
 }
 
-const Material::VectorParam*
+const Materials::VectorParam*
 Material::VectorParamsBegin() const
 {
     return vectorParams.Begin();
 }
 
-const Material::VectorParam*
+const Materials::VectorParam*
 Material::VectorParamsEnd() const
 {
     return vectorParams.End();
@@ -136,13 +138,13 @@ Material::SetMatrix(const StringHash &name, const Math::Matrix &value)
     SetParam(matrixParams, name, value.GetTransposed());
 }
 
-const Material::MatrixParam*
+const Materials::MatrixParam*
 Material::MatrixParamsBegin() const
 {
     return matrixParams.Begin();
 }
 
-const Material::MatrixParam*
+const Materials::MatrixParam*
 Material::MatrixParamsEnd() const
 {
     return matrixParams.End();
@@ -166,16 +168,42 @@ Material::SetTexture(const StringHash &name, const char *filename, Access access
 	SetParam(textures, name, ResourceServer::Instance()->NewResourceFromFile<Texture>(filename, access));
 }
 
-const Material::TextureParam*
+const Materials::TextureParam*
 Material::TextureParamsBegin() const
 {
     return textures.Begin();
 }
 
-const Material::TextureParam*
+const Materials::TextureParam*
 Material::TextureParamsEnd() const
 {
     return textures.End();
+}
+
+bool
+Material::PrepareForRendering(RenderQueue *renderQueue)
+{
+    if (RenderResource<RHI::MaterialRenderData>::PrepareForRendering(renderQueue))
+    {
+        shader->PrepareForRendering(renderQueue);
+
+        clientRenderData.renderMode = renderMode;
+
+        for (auto it = this->FloatParamsBegin(), end = this->FloatParamsEnd(); it != end; ++it)
+            clientRenderData.parameters.AddFloat(*it);
+        for (auto it = this->VectorParamsBegin(), end = this->VectorParamsEnd(); it != end; ++it)
+            clientRenderData.parameters.AddVector(*it);
+        for (auto it = this->MatrixParamsBegin(), end = this->MatrixParamsEnd(); it != end; ++it)
+            clientRenderData.parameters.AddMatrix(*it);
+        for (auto it = this->TextureParamsBegin(), end = this->TextureParamsEnd(); it != end; ++it)
+        {
+            it->value->PrepareForRendering(renderQueue);
+
+            clientRenderData.parameters.AddTexture(*it);
+        }
+    }
+
+    return true;
 }
 
 } // namespace Framework

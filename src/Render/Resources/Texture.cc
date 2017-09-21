@@ -223,4 +223,13 @@ Texture::GetImage(uint8_t level) const
     return images[level];
 }
 
+bool
+Texture::PrepareForRendering(RenderQueue *renderQueue)
+{
+    if (RenderResource<RHI::TextureRenderData>::PrepareForRendering(renderQueue))
+        clientRenderData.buffer = buffer;
+
+    return true;
+}
+
 } // namespace Framework

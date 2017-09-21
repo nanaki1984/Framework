@@ -73,6 +73,7 @@ public:
 //#endif
 
     static Application* Instance();
+    static RenderQueue* GetRenderQueue();
 
     static bool IsRenderThread();
 };
@@ -81,6 +82,13 @@ inline Application*
 Application::Instance()
 {
     return Application::instance;
+}
+
+inline RenderQueue*
+Application::GetRenderQueue()
+{
+    assert(instance != nullptr);
+    return instance->renderQueue.Get();
 }
 
 inline int

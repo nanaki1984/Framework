@@ -1,43 +1,63 @@
 #pragma once
 
-#include "Render/Resources/Resource.h"
-#include "Render/Resources/Texture.h"
+#include "Render/Resources/RenderResource.h"
 #include "Render/Resources/Shader.h"
 #include "Math/Vector2.h"
 #include "Math/Vector3.h"
 #include "Math/Vector4.h"
 #include "Math/Matrix.h"
 #include "Core/Collections/Hash.h"
+#include "Render/MaterialParamsBlock.h"
 
 namespace Framework {
 
-class Material : public Resource {
-    DeclareClassInfo;
-public:
-    template <typename T>
-    struct Param {
-        StringHash name;
-        T		   value;
-    };
+    namespace RHI {
 
-    typedef Param<float>		                FloatParam;
-    typedef Param<Math::Vector4>                VectorParam;
-    typedef Param<Math::Matrix>                 MatrixParam;
-    typedef Param<WeakPtr<Texture>>             TextureParam;
-    typedef Param<SmartPtr<RHI::ComputeBuffer>> BufferParam;
+struct MaterialRenderData
+{
+    RenderModeState     renderMode;
+    MaterialParamsBlock parameters;
+
+    MaterialRenderData()
+    { }
+    MaterialRenderData(MaterialRenderData &&other)
+    {
+        renderMode = other.renderMode;
+        parameters = std::forward<MaterialParamsBlock>(other.parameters);
+    }
+
+    MaterialRenderData& operator = (MaterialRenderData &&other)
+    {
+        renderMode = other.renderMode;
+        parameters = std::forward<MaterialParamsBlock>(other.parameters);
+        return (*this);
+    }
+
+    void Invalidate()
+    {
+        parameters.Clear();
+    }
+};
+
+    } // namespace RHI
+
+class Material : public RenderResource<RHI::MaterialRenderData> {
+    DeclareClassInfo;
 protected:
     WeakPtr<Shader> shader;
 
-    Hash<Param<float>> floatParams;
-    Hash<Param<Math::Vector4>> vectorParams;
-    Hash<Param<Math::Matrix>> matrixParams;
-    Hash<Param<WeakPtr<Texture>>> textures;
+    Hash<Materials::FloatParam>   floatParams;
+    Hash<Materials::VectorParam>  vectorParams;
+    Hash<Materials::MatrixParam>  matrixParams;
+    Hash<Materials::TextureParam> textures;
+
+    RenderModeState renderMode;
 
     template <typename T>
     static
-    T GetParam(const Hash<Param<T>> &hash, const StringHash &name)
+    T GetParam(const Hash<Materials::Param<T>> &hash, const StringHash &name)
     {
-        const Param<T> *item = hash.Get(name.hash);
+        const Materials::Param<T> *item = hash.Get(name.hash);
         while (item != nullptr) {
             if (item->name == name)
                 break;
@@ -48,16 +68,16 @@ protected:
 
     template <typename T>
     static
-    void SetParam(Hash<Param<T>> &hash, const StringHash &name, const T &value)
+    void SetParam(Hash<Materials::Param<T>> &hash, const StringHash &name, const T &value)
     {
-        Param<T> *item = hash.Get(name.hash);
+        Materials::Param<T> *item = hash.Get(name.hash);
         while (item != nullptr) {
             if (item->name == name)
                 break;
             item = hash.Next(item);
         }
         if (nullptr == item) {
-            Param<T> param;
+            Materials::Param<T> param;
             param.name = name;
             param.value = value;
             hash.Add(name.hash, param);
@@ -80,28 +100,33 @@ public:
     void SetShader(const WeakPtr<Shader> &newShader);
 	void SetShader(const char *filename);
 
+    RenderModeState& GetRenderMode();
+    const RenderModeState& GetRenderMode() const;
+
     void CopyParamsFrom(const WeakPtr<Material> &otherMaterial);
 
     float GetFloat(const StringHash &name) const;
     void SetFloat(const StringHash &name, float value);
-    const FloatParam* FloatParamsBegin() const;
-    const FloatParam* FloatParamsEnd() const;
+    const Materials::FloatParam* FloatParamsBegin() const;
+    const Materials::FloatParam* FloatParamsEnd() const;
 
     Math::Vector4 GetVector(const StringHash &name) const;
     void SetVector(const StringHash &name, const Math::Vector4 &value);
-    const VectorParam* VectorParamsBegin() const;
-    const VectorParam* VectorParamsEnd() const;
+    const Materials::VectorParam* VectorParamsBegin() const;
+    const Materials::VectorParam* VectorParamsEnd() const;
 
     Math::Matrix GetMatrix(const StringHash &name) const;
     void SetMatrix(const StringHash &name, const Math::Matrix &value);
-    const MatrixParam* MatrixParamsBegin() const;
-    const MatrixParam* MatrixParamsEnd() const;
+    const Materials::MatrixParam* MatrixParamsBegin() const;
+    const Materials::MatrixParam* MatrixParamsEnd() const;
 
     WeakPtr<Texture> GetTexture(const StringHash &name) const;
     void SetTexture(const StringHash &name, const WeakPtr<Texture> &value);
 	void SetTexture(const StringHash &name, const char *filename, Access access = ReadOnly);
-    const TextureParam* TextureParamsBegin() const;
-    const TextureParam* TextureParamsEnd() const;
+    const Materials::TextureParam* TextureParamsBegin() const;
+    const Materials::TextureParam* TextureParamsEnd() const;
+
+    bool PrepareForRendering(RenderQueue *renderQueue);
 };
 
 inline const WeakPtr<Shader>&
@@ -114,6 +139,19 @@ inline void
 Material::SetShader(const WeakPtr<Shader> &newShader)
 {
     shader = newShader;
+    renderMode = newShader->GetRenderMode();
+}
+
+inline RenderModeState&
+Material::GetRenderMode()
+{
+    return renderMode;
+}
+
+inline const RenderModeState&
+Material::GetRenderMode() const
+{
+    return renderMode;
 }
 
 } // namespace Framework

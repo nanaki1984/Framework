@@ -180,11 +180,12 @@ OGLRenderer::CreateVAO(const WeakPtr<Shader> &shader, Mesh *mesh)
     glBindVertexArray(vao.vao);
 #endif
 
-    OGLShaderProgram *shaderProgram = shader->GetProgram();
+    OGLShaderProgram *shaderProgram = shader->GetRenderData().program.Get();
 
-    const VertexDecl &vertexDecl = mesh->GetVertexDecl();
-    OGLVertexBuffer *vb = static_cast<OGLVertexBuffer*>(mesh->GetVertexBuffer().Get());
-    OGLIndexBuffer *ib = static_cast<OGLIndexBuffer*>(mesh->GetIndexBuffer().Get());
+    auto &meshRenderData = mesh->GetRenderData();
+    const VertexDecl &vertexDecl = meshRenderData.vd;
+    OGLVertexBuffer *vb = meshRenderData.vb.Get();
+    OGLIndexBuffer *ib = meshRenderData.ib.Get();
 
     glBindBuffer(GL_ARRAY_BUFFER, vb->GetId());
 
@@ -372,7 +373,7 @@ OGLRenderer::FreeUnusedObjects()
 }
 
 void
-OGLRenderer::ApplyFloatParams(OGLShaderProgram *program, const Material::FloatParam *begin, const Material::FloatParam *end)
+OGLRenderer::ApplyFloatParams(OGLShaderProgram *program, const Materials::FloatParam *begin, const Materials::FloatParam *end)
 {
     BaseShaderProgram::ShaderParam shdParam;
     for (auto it = begin; it < end; ++it) {
@@ -382,7 +383,7 @@ OGLRenderer::ApplyFloatParams(OGLShaderProgram *program, const Material::FloatPa
 }
 
 void
-OGLRenderer::ApplyVectorParams(OGLShaderProgram *program, const Material::VectorParam *begin, const Material::VectorParam *end)
+OGLRenderer::ApplyVectorParams(OGLShaderProgram *program, const Materials::VectorParam *begin, const Materials::VectorParam *end)
 {
     BaseShaderProgram::ShaderParam shdParam;
     for (auto it = begin; it < end; ++it) {
@@ -405,7 +406,7 @@ OGLRenderer::ApplyVectorParams(OGLShaderProgram *program, const Material::Vector
 }
 
 void
-OGLRenderer::ApplyMatrixParams(OGLShaderProgram *program, const Material::MatrixParam *begin, const Material::MatrixParam *end)
+OGLRenderer::ApplyMatrixParams(OGLShaderProgram *program, const Materials::MatrixParam *begin, const Materials::MatrixParam *end)
 {
     BaseShaderProgram::ShaderParam shdParam;
     for (auto it = begin; it < end; ++it) {
@@ -415,7 +416,7 @@ OGLRenderer::ApplyMatrixParams(OGLShaderProgram *program, const Material::Matrix
 }
 
 void
-OGLRenderer::ApplyTextureParams(OGLShaderProgram *program, const Material::TextureParam *begin, const Material::TextureParam *end)
+OGLRenderer::ApplyTextureParams(OGLShaderProgram *program, const Materials::TextureParam *begin, const Materials::TextureParam *end)
 {
     BaseShaderProgram::ShaderParam shdParam;
     for (auto it = begin; it < end; ++it) {
@@ -454,7 +455,7 @@ OGLRenderer::ApplyTextureParams(OGLShaderProgram *program, const Material::Textu
 }
 
 void
-OGLRenderer::ApplyBufferParams(OGLShaderProgram *program, const Material::BufferParam *begin, const Material::BufferParam *end)
+OGLRenderer::ApplyBufferParams(OGLShaderProgram *program, const Materials::BufferParam *begin, const Materials::BufferParam *end)
 {
     BaseShaderProgram::ShaderParam shdParam;
     for (auto it = begin; it < end; ++it) {
@@ -557,21 +558,23 @@ OGLRenderer::Clear(ClearFlags clearFlags, uint32_t color, float depth, uint32_t 
 bool
 OGLRenderer::SetMaterialPass(ResourceId materialId, uint8_t pass)
 {
-    const Shader *prevShader = lastShader;
+    const Material *prevMaterial = lastMaterial;
     if (BaseRenderer::SetMaterialPass(materialId, pass) && lastMaterial.IsValid()) {
-        this->SetRenderModeState(nullptr == prevShader ? nullptr : &prevShader->GetRenderMode(), lastShader->GetRenderMode());
+        auto &matRenderData = lastMaterial->GetRenderData();
+        this->SetRenderModeState(nullptr == prevMaterial ? nullptr : &prevMaterial->GetRenderData().renderMode, matRenderData.renderMode);
 
-        assert(lastShader->GetProgram()->IsLinked());
-        OGLShaderProgram *oglProg = lastShader->GetProgram().Get();
+        auto &shdRenderData = lastShader->GetRenderData();
+        assert(shdRenderData.program->IsLinked());
+        OGLShaderProgram *oglProg = shdRenderData.program.Get();
         glUseProgram(oglProg->GetProgramHandle());
         CheckOGLErrors("UseShaderProgram");
 
-        this->ApplyFloatParams(oglProg, lastMaterial->FloatParamsBegin(), lastMaterial->FloatParamsEnd());
-        this->ApplyVectorParams(oglProg, lastMaterial->VectorParamsBegin(), lastMaterial->VectorParamsEnd());
-        this->ApplyMatrixParams(oglProg, lastMaterial->MatrixParamsBegin(), lastMaterial->MatrixParamsEnd());
+        this->ApplyFloatParams(oglProg, matRenderData.parameters.FloatParamsBegin(), matRenderData.parameters.FloatParamsEnd());
+        this->ApplyVectorParams(oglProg, matRenderData.parameters.VectorParamsBegin(), matRenderData.parameters.VectorParamsEnd());
+        this->ApplyMatrixParams(oglProg, matRenderData.parameters.MatrixParamsBegin(), matRenderData.parameters.MatrixParamsEnd());
         CheckOGLErrors("MaterialUniforms");
 
-        this->ApplyTextureParams(oglProg, lastMaterial->TextureParamsBegin(), lastMaterial->TextureParamsEnd());
+        this->ApplyTextureParams(oglProg, matRenderData.parameters.TextureParamsBegin(), matRenderData.parameters.TextureParamsEnd());
 		CheckOGLErrors("BindTextures");
     }
 
@@ -605,7 +608,7 @@ OGLRenderer::DrawMesh(ResourceId meshId, uint8_t subMeshIndex, const MaterialPar
     if (!lastMesh.IsValid())
         return false;
 
-    OGLShaderProgram *oglProg = lastShader->GetProgram();
+    OGLShaderProgram *oglProg = lastShader->GetRenderData().program.Get();
 
     this->ApplyFloatParams(oglProg, params.FloatParamsBegin(), params.FloatParamsEnd());
     this->ApplyVectorParams(oglProg, params.VectorParamsBegin(), params.VectorParamsEnd());
@@ -618,8 +621,9 @@ OGLRenderer::DrawMesh(ResourceId meshId, uint8_t subMeshIndex, const MaterialPar
     this->ApplyBufferParams(oglProg, params.BufferParamsBegin(), params.BufferParamsEnd());
     CheckOGLErrors("MeshBuffers");
 
-    IndexSize idxSize = lastMesh->GetIndexBuffer()->GetIndexSize();
-    const DrawPrimitives &drawCall = lastMesh->GetSubMeshPrimitives(subMeshIndex);
+    auto &meshRenderData = lastMesh->GetRenderData();
+    IndexSize idxSize = meshRenderData.ib->GetIndexSize();
+    const DrawPrimitives &drawCall = meshRenderData.dc[subMeshIndex];
 
     uint32_t idxCount = 0;
     switch (drawCall.primType) {
@@ -660,8 +664,9 @@ OGLRenderer::Dispatch(ResourceId computeShaderId, uint32_t numGroupsX, uint32_t 
 {
     if (BaseRenderer::Dispatch(computeShaderId, numGroupsX, numGroupsY, numGroupsZ, params))
     {
-        assert(lastComputeShader->GetProgram()->IsLinked());
-        OGLShaderProgram *oglProg = lastComputeShader->GetProgram().Get();
+        auto &cmpShdRenderData = lastComputeShader->GetRenderData();
+        assert(cmpShdRenderData.program->IsLinked());
+        OGLShaderProgram *oglProg = cmpShdRenderData.program.Get();
         glUseProgram(oglProg->GetProgramHandle());
         CheckOGLErrors("UseShaderProgram");
     }
@@ -669,7 +674,7 @@ OGLRenderer::Dispatch(ResourceId computeShaderId, uint32_t numGroupsX, uint32_t 
     if (!lastComputeShader.IsValid())
         return false;
 
-    OGLShaderProgram *oglProg = lastComputeShader->GetProgram().Get();
+    OGLShaderProgram *oglProg = lastComputeShader->GetRenderData().program.Get();
 
     this->ApplyFloatParams(oglProg, params.FloatParamsBegin(), params.FloatParamsEnd());
     this->ApplyVectorParams(oglProg, params.VectorParamsBegin(), params.VectorParamsEnd());

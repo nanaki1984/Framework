@@ -1,15 +1,33 @@
 #pragma once
 
 #include "Core/SmartPtr.h"
-#include "Render/Resources/Resource.h"
+#include "Render/Resources/RenderResource.h"
 #include "Render/RenderObjects.h"
 #include "Core/Collections/Array_type.h"
 #include "Core/IO/BitStream.h"
 #include "Math/Bounds.h"
 
 namespace Framework {
+        namespace RHI {
 
-class Mesh : public Resource {
+struct MeshRenderData : RenderData
+{
+    VertexDecl                  vd;
+    SmartPtr<RHI::VertexBuffer> vb;
+    SmartPtr<RHI::IndexBuffer>  ib;
+    Array<DrawPrimitives>       dc;
+
+    MeshRenderData();
+    MeshRenderData(MeshRenderData &&other);
+
+    MeshRenderData& operator = (MeshRenderData &&other);
+
+    void Invalidate();
+};
+
+    } // namespace RHI
+
+class Mesh : public RenderResource<RHI::MeshRenderData> {
     DeclareClassInfo;
 protected:
     SmartPtr<RHI::VertexBuffer> vertexBuffer;
@@ -58,6 +76,8 @@ public:
     DrawPrimitives& GetSubMeshPrimitives(uint32_t index);
 
     // ToDo: vertices & triangles iterators
+
+    bool PrepareForRendering(RenderQueue *renderQueue);
 };
 
 inline const RHI::VertexDecl&

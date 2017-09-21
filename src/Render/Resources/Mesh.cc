@@ -7,6 +7,40 @@
 #include "Render/RenderQueue.h"
 
 namespace Framework {
+    namespace RHI {
+
+MeshRenderData::MeshRenderData()
+: dc(Memory::GetAllocator<MallocAllocator>())
+{ }
+
+MeshRenderData::MeshRenderData(MeshRenderData &&other)
+: dc(Memory::GetAllocator<MallocAllocator>())
+{
+    vd = std::forward<VertexDecl>(other.vd);
+    vb = std::forward<SmartPtr<RHI::VertexBuffer>>(other.vb);
+    ib = std::forward<SmartPtr<RHI::IndexBuffer>>(other.ib);
+    dc = std::forward<Array<DrawPrimitives>>(other.dc);
+}
+
+MeshRenderData&
+MeshRenderData::operator = (MeshRenderData &&other)
+{
+    vd = std::forward<VertexDecl>(other.vd);
+    vb = std::forward<SmartPtr<RHI::VertexBuffer>>(other.vb);
+    ib = std::forward<SmartPtr<RHI::IndexBuffer>>(other.ib);
+    dc = std::forward<Array<DrawPrimitives>>(other.dc);
+    return (*this);
+}
+
+void
+MeshRenderData::Invalidate()
+{
+    vb.Reset();
+    ib.Reset();
+    dc.Clear();
+}
+
+    } // namespace RHI
 
 DefineClassInfoWithFactory(Framework::Mesh, Framework::Resource);
 
@@ -321,6 +355,20 @@ Mesh::SetSubMeshCount(int subMeshCount)
     assert(subMeshCount > 0);
     subMeshesBounds.Resize(subMeshCount);
     subMeshesPrimitives.Resize(subMeshCount);
+}
+
+bool
+Mesh::PrepareForRendering(RenderQueue *renderQueue)
+{
+    if (RenderResource<RHI::MeshRenderData>::PrepareForRendering(renderQueue))
+    {
+        clientRenderData.vd = this->GetVertexDecl();
+        clientRenderData.vb = vertexBuffer;
+        clientRenderData.ib = indexBuffer;
+        clientRenderData.dc.InsertRange(0, subMeshesPrimitives.Begin(), subMeshesPrimitives.Count());
+    }
+
+    return true;
 }
 
 } // namespace Framework

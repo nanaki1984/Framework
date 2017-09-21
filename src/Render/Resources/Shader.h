@@ -2,13 +2,39 @@
 
 #include "Core/SmartPtr.h"
 #include "Core/Collections/Array_type.h"
-#include "Render/Resources/Resource.h"
+#include "Render/Resources/RenderResource.h"
 #include "Render/RenderModeState.h"
 #include "Render/RenderObjects.h"
 
 namespace Framework {
+    namespace RHI {
 
-class Shader : public Resource {
+struct ShaderRenderData : RenderData
+{
+    SmartPtr<RHI::ShaderProgram> program;
+
+    ShaderRenderData()
+    { }
+    ShaderRenderData(ShaderRenderData &&other)
+    {
+        program = std::forward<SmartPtr<RHI::ShaderProgram>>(other.program);
+    }
+
+    ShaderRenderData& operator = (ShaderRenderData &&other)
+    {
+        program = std::forward<SmartPtr<RHI::ShaderProgram>>(other.program);
+        return (*this);
+    }
+
+    void Invalidate()
+    {
+        program.Reset();
+    }
+};
+
+    } // namespace RHI
+
+class Shader : public RenderResource<RHI::ShaderRenderData> {
     DeclareClassInfo;
 protected:
     Array<String> srcLines;
@@ -29,17 +55,12 @@ public:
 
     virtual uint32_t GetAccessModes() const;
 
-    RenderModeState& GetRenderMode();
     const RenderModeState& GetRenderMode() const;
 
     const SmartPtr<RHI::ShaderProgram>& GetProgram() const;
-};
 
-inline RenderModeState&
-Shader::GetRenderMode()
-{
-    return renderMode;
-}
+    bool PrepareForRendering(RenderQueue *renderQueue);
+};
 
 inline const RenderModeState&
 Shader::GetRenderMode() const
