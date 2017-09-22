@@ -223,6 +223,13 @@ Texture::GetImage(uint8_t level) const
     return images[level];
 }
 
+Image&
+Texture::GetImage(uint8_t level)
+{
+    assert(!images.IsEmpty());
+    return images[level];
+}
+
 bool
 Texture::PrepareForRendering(RenderQueue *renderQueue)
 {

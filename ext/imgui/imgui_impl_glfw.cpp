@@ -81,17 +81,42 @@ public:
         for (int i = materials.Count(); i < nDrawCalls; ++i)
         {
             WeakPtr<Material> mat = ResourceServer::Instance()->NewResource<Material>("uiMaterial", Resource::ReadOnly);
-            mat->SetShader("home:shaders/ui.shader");
+            mat->SetShader("shaders:UI.shader");
             materials.PushBack(mat);
         }
     }
 
     void Fill(
+        int fb_height,
         const ImVector<ImDrawVert> &vertices,
         const ImVector<ImDrawIdx>  &indices,
         const ImVector<ImDrawCmd>  &drawCalls)
     {
+        mesh->GetVertexBufferData().Reset();
+        mesh->GetVertexBufferData().WriteBytes(vertices.Data, sizeof(ImDrawVert) * vertices.Size);
 
+        mesh->GetIndexBufferData().Reset();
+        mesh->GetIndexBufferData().WriteBytes(indices.Data, sizeof(ImDrawIdx) * indices.Size);
+
+        for (int i = 0, c = drawCalls.Size; i < c; ++i)
+        {
+            DrawPrimitives &dc = mesh->GetSubMeshPrimitives(i);
+
+            dc.primType    = DrawPrimitives::TriangleList;
+            dc.startIndex  = 0;
+            dc.nPrimitives = drawCalls[i].ElemCount;
+
+            const ImVec4 &scissorRect = drawCalls[i].ClipRect;
+
+            RenderModeState &renderMode = materials[i]->GetRenderMode();
+            renderMode.scissorTestEnabled = true;
+            renderMode.scissorTestRect[0] = scissorRect.x;
+            renderMode.scissorTestRect[1] = (fb_height - scissorRect.w);
+            renderMode.scissorTestRect[2] = (scissorRect.z - scissorRect.x);
+            renderMode.scissorTestRect[3] = (scissorRect.w - scissorRect.y);
+
+            materials[i]->SetTexture("Texture", ResourceServer::Instance()->GetResourceById((ResourceId)drawCalls[i].TextureId).Cast<Texture>());
+        }
     }
 };
 
@@ -261,7 +286,22 @@ bool ImGui_ImplGlfwGL3_CreateFontsTexture()
 	int width, height;
 	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
-															  // Upload texture to graphics system
+                                                              // Upload texture to graphics system
+
+    WeakPtr<Texture> fontTex = ResourceServer::Instance()->NewResource<Texture>("uiFont", Resource::ReadOnly);
+    RHI::TextureBufferDesc texDesc;
+    Memory::Zero(&texDesc);
+    texDesc.width  = width;
+    texDesc.height = height;
+    texDesc.format = ImageFormat::A8R8G8B8;
+    texDesc.type   = RHI::BaseTextureBuffer::Texture2D;
+    fontTex->Load(texDesc);
+    Image &img = fontTex->GetImage(0);
+    Memory::Copy(static_cast<unsigned char*>(img.GetPixels()), pixels, img.GetSize());
+    fontTex->Apply(0);
+
+    io.Fonts->TexID = (void *)fontTex->GetId();
+
 	GLint last_texture;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
 	glGenTextures(1, &g_FontTexture);

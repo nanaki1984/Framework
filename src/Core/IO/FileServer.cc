@@ -12,8 +12,9 @@ DefineClassInfo(Framework::FileServer, Framework::RefCounted);
 FileServer::FileServer()
 : aliases(Memory::GetAllocator<MallocAllocator>())
 {
-    this->AddAlias("home", "../.."); // ToDo
-    this->AddAlias("shaders_include", "home:"); // ToDo
+    this->AddAlias("home", "../../data"); // ToDo
+    this->AddAlias("shaders", "home:shaders");
+    this->AddAlias("shaders_include", "shaders:include");
 }
 
 FileServer::~FileServer()

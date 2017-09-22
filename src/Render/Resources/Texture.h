@@ -53,6 +53,7 @@ public:
 
     const SmartPtr<RHI::TextureBuffer>& GetBuffer() const;
     const Image& GetImage(uint8_t level = 0) const;
+    Image& GetImage(uint8_t level = 0);
     // ToDo: SetImage (check width/height except if level == 0 - format doesn't matter, convert)
     //const Image::Image& GetCubeImage(CubeFace face, uint8_t level = 0) const;
 
