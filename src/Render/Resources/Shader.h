@@ -43,7 +43,7 @@ protected:
     RenderModeState renderMode;
     SmartPtr<RHI::ShaderProgram> program; // ToDo: passes
 
-    bool parseFile(const char *filename, int depth, char *error, uint32_t errorSize);
+    bool parseFile(const char *filename, int depth, RHI::BaseShaderProgram::Translucency &translucency, char *error, uint32_t errorSize);
 
     virtual bool LoadImpl();
     virtual void UnloadImpl();

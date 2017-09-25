@@ -85,7 +85,7 @@ Application::Initialize(int width, int height)
 	glfwMakeContextCurrent(loadingContext);
 	glewInit();
 
-    //ImGui_ImplGlfwGL3_Init(gameWindow, true);
+    ImGui_ImplGlfwGL3_Init(renderingContext, true);
 
     renderQueue = SmartPtr<RenderQueue>::MakeNew<LinearAllocator>();
 
@@ -118,7 +118,7 @@ Application::Run()
 void
 Application::Tick()
 {
-	//ImGui_ImplGlfwGL3_NewFrame();
+	ImGui_ImplGlfwGL3_NewFrame();
 
 	timeServer->Tick();
 
@@ -136,6 +136,8 @@ Application::Tick()
 	renderQueue->BeginFrameCommands();
 	for (it = managers.Begin(); it != end; ++it)
 		(*it)->OnRender();
+
+    ImGui::Render();
 	renderQueue->EndFrameCommands();
 }
 
@@ -223,7 +225,7 @@ Application::RequestQuit()
 
     ClassInfoUtils::Destroy();
 
-    //ImGui_ImplGlfwGL3_Shutdown();
+    ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
 
     active = false;

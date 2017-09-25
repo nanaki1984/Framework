@@ -3,6 +3,7 @@
 #include "Core/RefCounted.h"
 #include "Core/StringHash.h"
 #include "Core/String.h"
+#include "Core/EnumStrings.h"
 #include "Core/Collections/Hash_type.h"
 
 namespace Framework {
@@ -87,3 +88,5 @@ BaseShaderProgram::IsLinked() const
 
     } // namespace RHI
 } // namespace Framework
+
+DeclareEnumStrings(Framework::RHI::BaseShaderProgram::Translucency, 4);

@@ -140,3 +140,10 @@ BaseShaderProgram::GetWorkGroupSizes(int &x, int &y, int &z)
 
     } // namespace RHI
 } // namespace Framework
+
+DefineEnumStrings(Framework::RHI::BaseShaderProgram::Translucency) = {
+    "Opaque",
+    "AlphaMul",
+    "AlphaAdd",
+    "AlphaBlend"
+};

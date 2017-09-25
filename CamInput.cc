@@ -83,7 +83,7 @@ CamInput::Update()
 
     // 1. Show a simple window
     // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
-    /*{
+    {
         static ImVec4 clear_color = ImColor(114, 144, 154);
         static float f = 0.0f;
         static bool show_window = true;
@@ -99,5 +99,5 @@ CamInput::Update()
 
         static bool show_metrics = true;
         ImGui::ShowMetricsWindow(&show_metrics);
-    }*/
+    }
 }

@@ -83,10 +83,10 @@ template <typename T>
 void MoveReverse(T *dest, T *src, size_t n)
 {
     if (std::is_trivially_copyable<T>::value) {
-        for (int32_t i = n - 1; i >= 0; --i)
+        for (int32_t i = int32_t(n - 1); i >= 0; --i)
             memmove(dest + i, src + i, sizeof(T));
     } else {
-        for (int32_t i = n - 1; i >= 0; --i) {
+        for (int32_t i = int32_t(n - 1); i >= 0; --i) {
             if (std::is_move_constructible<T>::value)
                 new(dest + i) T(std::forward<T>(*(src + i)));
             else if (std::is_move_assignable<T>::value) {

@@ -189,8 +189,6 @@ RenderQueue::RenderFrames()
             commands.Clear();
         }
 
-        //ImGui::Render();
-
         renderer->EndFrame();
 
 	    glfwSwapBuffers(ctx);

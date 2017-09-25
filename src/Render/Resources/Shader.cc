@@ -25,7 +25,7 @@ Shader::GetAccessModes() const
 }
 
 bool
-Shader::parseFile(const char *filename, int depth, char *error, uint32_t errorSize)
+Shader::parseFile(const char *filename, int depth, RHI::BaseShaderProgram::Translucency &translucency, char *error, uint32_t errorSize)
 { // ToDo: passes
     if (depth > 8) {
         snprintf(error, errorSize, "(%s,0) Reached max depth", filename);
@@ -58,7 +58,7 @@ Shader::parseFile(const char *filename, int depth, char *error, uint32_t errorSi
                     String path("shaders_include:");
                     while (ptr < endPtr)
                         path += *(ptr++);
-                    if (!this->parseFile(FileServer::Instance()->ResolvePath(path).AsCString(), depth + 1, error, errorSize))
+                    if (!this->parseFile(FileServer::Instance()->ResolvePath(path).AsCString(), depth + 1, translucency, error, errorSize))
                         return false;
                 }
             } else if (ptr == strstr(ptr, "vertex")) {
@@ -76,8 +76,12 @@ Shader::parseFile(const char *filename, int depth, char *error, uint32_t errorSi
                 }
                 startLines[RHI::BaseShaderProgram::FragmentShader] = srcLines.Count();
             } else {
+                if (ptr == strstr(ptr, "translucency ")) {
+                    ptr += 13;
+                    translucency = StringToEnum<RHI::BaseShaderProgram::Translucency>(ptr);
+                }
                 // renderMode
-                if (ptr == strstr(ptr, "cullMode ")) {
+                else if (ptr == strstr(ptr, "cullMode ")) {
                     ptr += 9;
                     renderMode.cullMode = StringToEnum<RenderModeState::CullMode>(ptr);
                 } else if (ptr == strstr(ptr, "colorMask ")) {
@@ -127,13 +131,16 @@ Shader::LoadImpl()
     for (; i < RHI::BaseShaderProgram::ShadersCount; ++i)
         startLines[i] = -1;
 
+    RHI::BaseShaderProgram::Translucency translucency = RHI::BaseShaderProgram::Opaque;
+
     char error[1024];
-    if (!this->parseFile(filename.AsCString(), 0, error, sizeof(error))) {
+    if (!this->parseFile(filename.AsCString(), 0, translucency, error, sizeof(error))) {
         Log::Instance()->Write(Log::Error, "Shader parse error:\n%s", error);
         return false;
     }
 
     program = SmartPtr<RHI::ShaderProgram>::MakeNew<BlocksAllocator>();
+    program->SetTranslucency(translucency);
 
     for (i = 0; i < RHI::BaseShaderProgram::ShadersCount; ++i) {
         int32_t startLine = startLines[i];

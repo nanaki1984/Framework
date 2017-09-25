@@ -95,7 +95,7 @@ OGLRenderer::SetRenderModeState(const RenderModeState *lastState, const RenderMo
     {
         if (thisState.scissorTestEnabled)
         {
-            if (!lastState->scissorTestEnabled)
+            if (nullptr == lastState || !lastState->scissorTestEnabled)
                 glEnable(GL_SCISSOR_TEST);
 
             glScissor(thisState.scissorTestRect[0], thisState.scissorTestRect[1], thisState.scissorTestRect[2], thisState.scissorTestRect[3]);

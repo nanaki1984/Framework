@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
             car->AddComponent("TestRotate");
 
             auto mat = ResourceServer::Instance()->NewResource<Material>("test_mat", Resource::Writable);
-            mat->SetShader("home:test.shader");
+            mat->SetShader("shaders:test.shader");
             mat->SetTexture("Diffuse", "home:test.dds", Resource::ReadOnly);
 
             meshRndr->SetMaterial(mat);
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
                 c->GetTransform()->SetWorldPosition(Math::Vector3((x - 10.0f) * 3.0f, (rand() / (float)RAND_MAX) * 5.0f - 2.5f, (z - 10.0f) * 3.0f));
             }
 
-            auto shd = ResourceServer::Instance()->NewResourceFromFile<ComputeShader>("home:test_compute.cshader", Resource::ReadOnly);
+            auto shd = ResourceServer::Instance()->NewResourceFromFile<ComputeShader>("shaders:test_compute.cshader", Resource::ReadOnly);
 #else
             Camera::EnsureLinking();
 
