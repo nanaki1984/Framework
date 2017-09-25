@@ -365,8 +365,15 @@ Mesh::PrepareForRendering(RenderQueue *renderQueue)
         clientRenderData.vd = this->GetVertexDecl();
         clientRenderData.vb = vertexBuffer;
         clientRenderData.ib = indexBuffer;
-        clientRenderData.dc.InsertRange(0, subMeshesPrimitives.Begin(), subMeshesPrimitives.Count());
     }
+/*
+    uint32_t subMeshesCount = subMeshesPrimitives.Count();
+    uint32_t prevSubMeshesCount = clientRenderData.dc.Count();
+    if (subMeshesCount > prevSubMeshesCount)
+        clientRenderData.dc.InsertRange(prevSubMeshesCount, subMeshesPrimitives.Begin() + prevSubMeshesCount, subMeshesCount - prevSubMeshesCount);
+*/
+    clientRenderData.dc.Clear();
+    clientRenderData.dc.InsertRange(0, subMeshesPrimitives.Begin(), subMeshesPrimitives.Count());
 
     return true;
 }
