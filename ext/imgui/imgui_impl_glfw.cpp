@@ -110,7 +110,7 @@ public:
     }
 
     void FillAndRender(
-        int fb_height, uint16_t paramsBlockId, RHI::Key &key,
+        int fb_height, const float *projMtx, RHI::Key &key,
         const ImVector<ImDrawVert> &vertices,
         const ImVector<ImDrawIdx>  &indices,
         const ImVector<ImDrawCmd>  &drawCalls)
@@ -145,6 +145,10 @@ public:
 
             materials[i]->SetTexture("Texture", ResourceServer::Instance()->GetResourceById((ResourceId)drawCalls[i].TextureId).Cast<Texture>());
 
+            MaterialParamsBlock *params;
+            uint16_t paramsBlockId = RenderQueue::Instance()->GetMaterialParamsBlock(&params);
+            params->AddMatrix("ProjMtx", Math::Matrix(projMtx));
+
             key.DrawCall(0, materials[i], 0, mesh, (uint8_t)i, paramsBlockId, .0f);
             RenderQueue::Instance()->SendCommand(key);
         }
@@ -174,7 +178,7 @@ void ImGui_ImplGlfwGL3_RenderDrawLists(ImDrawData* draw_data)
 
     RHI::Key key;
     key.cameraDepth = 0xff;
-    key.cameraLayer = 0;
+    key.cameraLayer = 0xf;
 
     key.Sequence(0).ResetRenderTarget();
     RenderQueue::Instance()->SendCommand(key);
@@ -184,10 +188,13 @@ void ImGui_ImplGlfwGL3_RenderDrawLists(ImDrawData* draw_data)
     viewport.y      = 0;
     viewport.width  = fb_width;
     viewport.height = fb_height;
-    viewport.minZ   = 0.0f;
-    viewport.maxZ   = 1.0f;
+    viewport.minZ   = -1.0f;
+    viewport.maxZ   =  1.0f;
 
     key.Sequence(0).SetViewport(viewport);
+    RenderQueue::Instance()->SendCommand(key);
+
+    key.Sequence(0).Clear(RHI::BaseRenderer::ClearDepth, 0, 1.0f, 0);
     RenderQueue::Instance()->SendCommand(key);
 
     for (int n = 0; n < draw_data->CmdListsCount; n++)
@@ -202,11 +209,7 @@ void ImGui_ImplGlfwGL3_RenderDrawLists(ImDrawData* draw_data)
         else
             (*uiMeshes)[n].Reserve(cmd_list->VtxBuffer.Size, cmd_list->IdxBuffer.Size, cmd_list->CmdBuffer.Size);
 
-        MaterialParamsBlock *params;
-        uint16_t paramsBlockId = RenderQueue::Instance()->GetMaterialParamsBlock(&params);
-        params->AddMatrix("ProjMtx", Math::Matrix(projMtx));
-
-        (*uiMeshes)[n].FillAndRender(fb_height, paramsBlockId, key, cmd_list->VtxBuffer, cmd_list->IdxBuffer, cmd_list->CmdBuffer);
+        (*uiMeshes)[n].FillAndRender(fb_height, projMtx, key, cmd_list->VtxBuffer, cmd_list->IdxBuffer, cmd_list->CmdBuffer);
     }
 }
 
